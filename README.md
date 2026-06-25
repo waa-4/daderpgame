@@ -1,14 +1,66 @@
-# DaDerpGame v4.2 — Player Center Fix
+# DaDerpGame v5
 
-This fixes the issue where only the camera moved while the visible cube stayed behind.
+A major expansion of the current uploaded game.
 
-## Cause
-The local player's network hello message replaced the live player object with a copied object. Movement updated the live object, while the renderer kept drawing the old copy.
+## Playable modes
 
-## Fixes
-- The local player is never replaced by a network copy.
-- The renderer always draws the live local player object.
-- The local player stays exactly in the center while the map moves.
-- Mobile joystick, WASD, arrows, customization, friends, chat, drawing, and online rooms remain included.
+- OG Derp
+- Survive the Evil Boi
+- Cube Warfare
+- Free Drawing
+- Create Mode
+- Platformer Chaos prototype
 
-Replace all root files with this version.
+## Survive the Evil Boi
+
+- 15-second lobby countdown
+- 90-second rounds
+- Random Evil Boi selection
+- Three rotating maps
+- Faster Evil Boi
+- Catching and spectator-style transparency
+- Win/result phase
+- Derpiness rewards
+
+## Cube Warfare
+
+- Red and Blue teams
+- Player health and respawning
+- Team bases
+- Bat: strong, very short range, quick swing
+- Mini Laser Cannon: high damage, area projectile, slow recharge
+- Water Gun: low damage, fast recharge
+- Knockout rewards
+
+## Avatar system
+
+- Five save slots
+- More faces and hats
+- Derpiness shop
+- All purchases use play-earned Derpiness only
+- No real-money purchases
+
+## Derpiness
+
+Earned by:
+- Playing over time
+- Starting/finishing rounds
+- Winning rounds
+- Warfare knockouts
+
+## Create Mode
+
+- Place blocks, spawn areas, goals, hazards, drawing boards, and bounce pads
+- Resize and recolor objects
+- Save/load one local map
+- Test collision
+- Share maps through URL data
+
+## Installation
+
+Replace the repository root files with:
+- index.html
+- style.css
+- config.js
+- app.js
+- README.md

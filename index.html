@@ -1,192 +1,176 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#08101d">
-  <title>DaDerpGame v4.2</title>
-  <link rel="stylesheet" href="style.css?v=4.2.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08101d">
+<title>DaDerpGame v5</title>
+<link rel="stylesheet" href="style.css?v=5.0.0">
 </head>
 <body>
-  <main id="app">
-    <section id="hubScreen" class="screen active">
-      <header class="hub-header">
-        <div class="brand-cube" aria-hidden="true"></div>
-        <div>
-          <h1>DaDerpGame</h1>
-          <p>tiny 2D games for friends</p>
-        </div>
-        <div class="header-actions">
-          <button id="profileBtn">Customize Cube</button>
-          <button id="friendsBtn">Friends</button>
-        </div>
-      </header>
+<main id="app">
+<section id="hubScreen" class="screen active">
+  <header class="hub-header">
+    <div class="brand-cube"></div>
+    <div>
+      <h1>DaDerpGame</h1>
+      <p>tiny 2D games for friends</p>
+    </div>
+    <div class="wallet">Derpiness: <b id="derpinessLabel">0</b></div>
+    <div class="header-actions">
+      <button id="avatarBtn">Avatar</button>
+      <button id="friendsBtn">Friends</button>
+    </div>
+  </header>
 
-      <div class="game-grid">
-        <article class="game-card cyan">
-          <span class="badge playable">PLAYABLE</span>
-          <h2>OG Derp</h2>
-          <p>Draw, chat, explore, kick balls, and chill in private rooms.</p>
-          <button class="primary" data-open-mode="og">Play OG Derp</button>
-        </article>
+  <div class="game-grid">
+    <article class="game-card cyan">
+      <span class="badge playable">PLAYABLE</span><h2>OG Derp</h2>
+      <p>Chat, draw, explore, and chill in private rooms.</p>
+      <button class="primary" data-mode="og">Play</button>
+    </article>
+    <article class="game-card red">
+      <span class="badge playable">ROUND GAME</span><h2>Survive the Evil Boi</h2>
+      <p>Lobby countdown, random Evil Boi, proper maps, catching, spectators, and round rewards.</p>
+      <button data-mode="evil">Play</button>
+    </article>
+    <article class="game-card blue">
+      <span class="badge playable">TEAM BATTLE</span><h2>Cube Warfare</h2>
+      <p>Red vs Blue with bats, mini laser cannons, and water guns.</p>
+      <button data-mode="warfare">Play</button>
+    </article>
+    <article class="game-card pink">
+      <span class="badge playable">ART MODE</span><h2>Free Drawing</h2>
+      <p>Draw anywhere across one giant shared map.</p>
+      <button data-mode="freedraw">Play</button>
+    </article>
+    <article class="game-card gold">
+      <span class="badge playable">CREATOR</span><h2>Create Mode</h2>
+      <p>Place, resize, recolor, save, load, test, and share simple games.</p>
+      <button data-mode="create">Open Editor</button>
+    </article>
+    <article class="game-card purple">
+      <span class="badge prototype">PROTOTYPE</span><h2>Platformer Chaos</h2>
+      <p>Side-view movement and building remains as the next major mode.</p>
+      <button data-mode="platform">Play Prototype</button>
+    </article>
+  </div>
 
-        <article class="game-card red">
-          <span class="badge prototype">PROTOTYPE</span>
-          <h2>Survive the Evil Boi</h2>
-          <p>One player hunts. Everyone else runs until the timer ends.</p>
-          <button data-open-mode="evil">Open Prototype</button>
-        </article>
+  <div class="promise">No microtransactions. No pay-to-win. Just derps.</div>
+  <div class="version">DaDerpGame v5.0</div>
+</section>
 
-        <article class="game-card gold">
-          <span class="badge planned">EDITOR</span>
-          <h2>Create Mode</h2>
-          <p>Place simple squares, spawn zones, hazards, goals, and drawing boards.</p>
-          <button data-open-mode="create">Open Create Mode</button>
-        </article>
+<section id="roomScreen" class="screen">
+  <div class="room-card">
+    <button data-back-hub>← Back</button>
+    <h2 id="roomModeTitle">Mode</h2>
+    <p id="roomModeDescription"></p>
+    <div class="profile-preview">
+      <canvas id="profilePreview" width="110" height="110"></canvas>
+      <div><b id="profilePreviewName">Derp</b><small>Avatar slot <span id="activeSlotLabel">1</span></small></div>
+    </div>
+    <label>Display name<input id="displayNameInput" maxlength="18"></label>
+    <div class="room-actions">
+      <button id="createOnlineBtn" class="primary">Create Online Room</button>
+      <div class="join-row"><input id="roomCodeInput" maxlength="8" placeholder="ROOM CODE"><button id="joinOnlineBtn">Join</button></div>
+      <button id="createLocalBtn">Local Two-Tab Test</button>
+    </div>
+    <div id="roomStatus" class="status">Ready.</div>
+  </div>
+</section>
 
-        <article class="game-card purple">
-          <span class="badge prototype">PROTOTYPE</span>
-          <h2>Platformer Chaos</h2>
-          <p>Jump, build blocks, and hide another player's builds just for yourself.</p>
-          <button data-open-mode="platform">Open Prototype</button>
-        </article>
+<section id="gameScreen" class="screen">
+  <canvas id="gameCanvas" tabindex="0"></canvas>
+  <header id="topbar">
+    <button id="hubBtn">Hub</button>
+    <div class="pill">MODE <b id="modeLabel">OG</b></div>
+    <div class="pill">ROOM <b id="roomLabel">------</b></div>
+    <div id="connectionLabel" class="pill offline">offline</div>
+    <div class="pill">DERPINESS <b id="gameDerpiness">0</b></div>
+    <button id="copyRoomBtn">Copy</button>
+  </header>
+
+  <aside id="roundPanel" class="floating-panel hidden">
+    <h3 id="roundTitle">Waiting...</h3>
+    <div id="roundTimer">--</div>
+    <div id="roundInfo"></div>
+  </aside>
+
+  <aside id="playersPanel" class="floating-panel"><h3>Players</h3><div id="playersList"></div></aside>
+
+  <aside id="chatPanel" class="floating-panel">
+    <h3>Chat</h3>
+    <div id="chatMessages"></div>
+    <div class="chat-row"><input id="chatInput" maxlength="160" placeholder="say something..."><button id="sendChatBtn">Send</button></div>
+    <div class="quick-chat">
+      <button data-quick="hello!">hello!</button><button data-quick="LOL">LOL</button>
+      <button data-quick="run!">run!</button><button data-quick="bruh">bruh</button>
+    </div>
+  </aside>
+
+  <aside id="toolPanel" class="floating-panel">
+    <button id="drawBtn">Draw: OFF</button><input id="brushColor" type="color" value="#ff4fc3">
+    <button id="undoBtn">Undo</button><button id="clearBtn">Clear</button>
+    <select id="weaponSelect" class="hidden">
+      <option value="bat">Bat</option><option value="laser">Mini Laser Cannon</option><option value="water">Water Gun</option>
+    </select>
+    <button id="actionBtn">Use</button>
+  </aside>
+
+  <aside id="createPanel" class="floating-panel hidden">
+    <h3>Create Mode</h3>
+    <select id="createObjectType">
+      <option value="block">Block</option><option value="spawn">Spawn Area</option>
+      <option value="goal">Goal</option><option value="hazard">Hazard</option>
+      <option value="drawboard">Drawing Board</option><option value="bounce">Bounce Pad</option>
+    </select>
+    <input id="createColor" type="color" value="#46d7ff">
+    <label>Width <input id="createWidth" type="range" min="30" max="300" value="100"></label>
+    <label>Height <input id="createHeight" type="range" min="30" max="220" value="80"></label>
+    <button id="createPlaceBtn">Place Mode</button>
+    <button id="createTestBtn">Test: OFF</button>
+    <button id="createSaveBtn">Save</button>
+    <button id="createLoadBtn">Load</button>
+    <button id="createShareBtn">Copy Share Link</button>
+    <button id="createClearBtn">Clear Map</button>
+  </aside>
+
+  <div id="mobileJoystick"><div id="mobileStick"></div></div>
+  <div id="mobileButtons"><button id="mobileAltBtn">ALT</button><button id="mobileActionBtn">USE</button></div>
+  <div id="toast"></div>
+</section>
+
+<dialog id="avatarDialog">
+  <form method="dialog" class="dialog-card">
+    <h2>Avatar Workshop</h2>
+    <div class="slot-row" id="avatarSlots"></div>
+    <div class="customize-grid">
+      <canvas id="avatarPreview" width="170" height="170"></canvas>
+      <div class="customize-fields">
+        <label>Color<input id="avatarColor" type="color"></label>
+        <label>Face<select id="avatarFace"></select></label>
+        <label>Hat<select id="avatarHat"></select></label>
+        <div class="shop-note">Locked cosmetics can be bought with Derpiness. Nothing costs real money.</div>
       </div>
+    </div>
+    <div id="shopList"></div>
+    <div class="dialog-actions"><button value="cancel">Close</button><button id="saveAvatarBtn" type="button" class="primary">Save Slot</button></div>
+  </form>
+</dialog>
 
-      <div class="promise">No microtransactions. No pay-to-win. Just derps.</div>
-      <div class="version">DaDerpGame v4.2</div>
-    </section>
-
-    <section id="roomScreen" class="screen">
-      <div class="room-card">
-        <button class="back-btn" data-back-hub>← Back</button>
-        <h2 id="roomModeTitle">OG Derp</h2>
-        <p id="roomModeDescription"></p>
-
-        <div class="profile-preview">
-          <canvas id="profilePreview" width="110" height="110"></canvas>
-          <div>
-            <b id="profilePreviewName">Derp</b>
-            <small>Your cube appearance is used in every mode.</small>
-          </div>
-        </div>
-
-        <label>Display name<input id="displayNameInput" maxlength="18" autocomplete="off"></label>
-        <div class="room-actions">
-          <button id="createOnlineBtn" class="primary">Create Online Room</button>
-          <div class="join-row">
-            <input id="roomCodeInput" maxlength="8" placeholder="ROOM CODE" autocomplete="off">
-            <button id="joinOnlineBtn">Join</button>
-          </div>
-          <button id="createLocalBtn">Local Two-Tab Test</button>
-        </div>
-        <div id="roomStatus" class="status">Ready.</div>
-      </div>
-    </section>
-
-    <section id="gameScreen" class="screen">
-      <canvas id="gameCanvas" tabindex="0"></canvas>
-
-      <header id="gameTopbar">
-        <button id="gameHubBtn">Hub</button>
-        <div class="pill">MODE <b id="modeLabel">OG DERP</b></div>
-        <div class="pill">ROOM <b id="roomLabel">------</b></div>
-        <div id="connectionLabel" class="pill offline">offline</div>
-        <button id="copyRoomBtn">Copy</button>
-      </header>
-
-      <aside id="playersPanel" class="floating-panel">
-        <h3>Players</h3>
-        <div id="playersList"></div>
-      </aside>
-
-      <aside id="chatPanel" class="floating-panel">
-        <h3>Chat</h3>
-        <div id="chatMessages"></div>
-        <div class="chat-row">
-          <input id="chatInput" maxlength="160" placeholder="say something...">
-          <button id="sendChatBtn">Send</button>
-        </div>
-        <div class="quick-chat">
-          <button data-quick="hello!">hello!</button>
-          <button data-quick="LOL">LOL</button>
-          <button data-quick="follow me">follow me</button>
-          <button data-quick="bruh">bruh</button>
-        </div>
-      </aside>
-
-      <aside id="toolPanel" class="floating-panel">
-        <button id="drawModeBtn">Draw: OFF</button>
-        <input id="brushColorInput" type="color" value="#ff4fc3">
-        <button id="undoDrawBtn">Undo</button>
-        <button id="clearDrawBtn">Clear</button>
-        <button id="interactBtn">Use</button>
-      </aside>
-
-      <div id="mobileJoystick"><div id="mobileStick"></div></div>
-      <div id="mobileButtons">
-        <button id="mobileDrawBtn">DRAW</button>
-        <button id="mobileUseBtn">USE</button>
-      </div>
-      <div id="toast"></div>
-    </section>
-
-    <dialog id="profileDialog">
-      <form method="dialog" class="dialog-card">
-        <h2>Customize Cube</h2>
-        <div class="customize-grid">
-          <canvas id="customizePreview" width="150" height="150"></canvas>
-          <div class="customize-fields">
-            <label>Cube color<input id="cubeColorInput" type="color"></label>
-            <label>Face
-              <select id="faceSelect">
-                <option value="none">None</option>
-                <option value="happy">Happy</option>
-                <option value="silly">Silly</option>
-                <option value="angry">Angry</option>
-                <option value="sleepy">Sleepy</option>
-                <option value="cool">Cool</option>
-              </select>
-            </label>
-            <label>Hat
-              <select id="hatSelect">
-                <option value="none">None</option>
-                <option value="cap">Derp Cap</option>
-                <option value="crown">Cardboard Crown</option>
-                <option value="cone">Traffic Cone</option>
-                <option value="cat">Cat Ears</option>
-                <option value="wizard">Wizard Hat</option>
-              </select>
-            </label>
-          </div>
-        </div>
-        <div class="dialog-actions">
-          <button value="cancel">Cancel</button>
-          <button id="saveProfileBtn" value="default" class="primary">Save</button>
-        </div>
-      </form>
-    </dialog>
-
-    <dialog id="friendsDialog">
-      <form method="dialog" class="dialog-card">
-        <h2>Friends</h2>
-        <p class="muted">Your friend code stays on this browser. Add a friend's code, then use room codes to meet in a game.</p>
-        <div class="friend-code-box">
-          <span>Your code</span>
-          <b id="myFriendCode">------</b>
-          <button id="copyFriendCodeBtn" type="button">Copy</button>
-        </div>
-        <div class="join-row">
-          <input id="friendCodeInput" maxlength="10" placeholder="FRIEND CODE">
-          <button id="addFriendBtn" type="button">Add Friend</button>
-        </div>
-        <div id="friendsList"></div>
-        <div class="dialog-actions"><button value="close">Close</button></div>
-      </form>
-    </dialog>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=4.2.0"></script>
-  <script src="app.js?v=4.2.0"></script>
+<dialog id="friendsDialog">
+  <form method="dialog" class="dialog-card">
+    <h2>Friends</h2>
+    <p class="muted">Friend codes are saved locally. Use room codes to join each other.</p>
+    <div class="friend-code-box"><span>Your code</span><b id="myFriendCode"></b><button id="copyFriendBtn" type="button">Copy</button></div>
+    <div class="join-row"><input id="friendCodeInput" maxlength="10" placeholder="FRIEND CODE"><button id="addFriendBtn" type="button">Add</button></div>
+    <div id="friendsList"></div>
+    <div class="dialog-actions"><button value="close">Close</button></div>
+  </form>
+</dialog>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=5.0.0"></script>
+<script src="app.js?v=5.0.0"></script>
 </body>
 </html>
