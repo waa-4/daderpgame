@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>DaDerpGame v2.1</title>
+<title>DaDerpGame v2.2</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09101d;color:#eef7ff;font-family:Arial,Helvetica,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09101d;color:#eef7ff;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;touch-action:none}
 button,input{font:inherit}button{cursor:pointer}
 .hidden{display:none!important}
 #lobby{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 20% 10%,#193a5a 0,transparent 35%),radial-gradient(circle at 80% 90%,#42224b 0,transparent 35%),#09101d;padding:18px}
@@ -19,7 +19,7 @@ input[type=color]{height:45px;padding:3px}
 button{border:1px solid #36506f;background:#182941;color:#fff;border-radius:12px;padding:11px 14px}
 button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478b6,#25bed2);font-weight:800}.danger{background:#522230;border-color:#8c3a50}
 #status{margin-top:14px;background:#0d1727;border:1px solid #243b57;border-radius:12px;padding:11px;min-height:42px;color:#b9eaff}
-#game{position:fixed;inset:0;background:#0a1120}
+#game{position:fixed;inset:0;background:#0a1120;overflow:hidden}
 #world{display:block;width:100%;height:100%;touch-action:none}
 #topbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:8px;align-items:center;pointer-events:none}
 #topbar>*{pointer-events:auto}.pill{background:#0d1728dd;border:1px solid #2f4565;border-radius:12px;padding:9px 11px}.online{color:#8effa7}.offline{color:#ff9eaa}
@@ -35,21 +35,32 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
 #quick{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}#quick button{padding:6px 8px;font-size:11px}
 #tools{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:7px;background:#0d1728e8;border:1px solid #2d4463;border-radius:16px;padding:8px}
 #tools button{padding:8px 10px;font-size:12px}#brushColor{width:42px;padding:2px}
-#joystick{display:none;position:absolute;left:22px;bottom:24px;width:132px;height:132px;border-radius:50%;background:#14233b99;border:2px solid #fff4;touch-action:none}
-#stick{position:absolute;width:54px;height:54px;left:37px;top:37px;border-radius:50%;background:#48d8ffcc;border:2px solid #fff}
-#mobileButtons{display:none;position:absolute;right:22px;bottom:30px;gap:12px}
+#joystick{display:none;position:fixed;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));width:clamp(108px,24vw,150px);height:clamp(108px,24vw,150px);border-radius:50%;background:#14233bcc;border:2px solid #ffffff55;touch-action:none;z-index:40;user-select:none;-webkit-user-select:none}
+#stick{position:absolute;width:42%;height:42%;left:29%;top:29%;border-radius:50%;background:#48d8ffee;border:2px solid #fff;pointer-events:none;box-shadow:0 0 22px #48d8ff66}
+#mobileButtons{display:none;position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));gap:12px;z-index:40}
 #mobileButtons button{width:76px;height:76px;border-radius:50%;font-weight:900}
 #cameraMode{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border:1px dashed #ffffff22;border-radius:12px;pointer-events:none}
 #toast{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);background:#07111fee;border:1px solid #31506f;border-radius:999px;padding:10px 15px;opacity:0;transition:.2s;pointer-events:none}#toast.show{opacity:1}
 #version{font-size:12px;color:#7f95ad;margin-top:10px}
-@media(max-width:800px){
- #players{display:none}#chat{top:auto;bottom:168px;right:8px;width:min(330px,calc(100% - 16px));height:235px}
- #tools{bottom:8px;left:8px;right:8px;transform:none;justify-content:center}
+@media(max-width:800px), (pointer:coarse){
+ #players{display:none}
+ #chat{top:auto;bottom:calc(clamp(108px,24vw,150px) + 34px);right:8px;width:min(330px,calc(100% - 16px));height:min(235px,34vh)}
+ #tools{bottom:8px;left:8px;right:8px;transform:none;justify-content:center;z-index:30}
  #tools button:nth-of-type(n+4),#brushColor{display:none}
  #joystick,#mobileButtons{display:flex}
- #toast{bottom:165px}
+ #toast{bottom:calc(clamp(108px,24vw,150px) + 40px)}
 }
-@media(max-width:520px){.grid{grid-template-columns:1fr}.row{flex-direction:column}.card{padding:18px}#chat{height:210px}}
+@media(max-width:520px){
+ .grid{grid-template-columns:1fr}.row{flex-direction:column}.card{padding:18px}
+ #chat{height:min(210px,30vh)}
+ #topbar{transform:scale(.92);transform-origin:top left;right:-8%}
+}
+@media(max-height:560px) and (orientation:landscape){
+ #chat{height:180px;bottom:10px;right:10px;width:280px}
+ #tools{display:none}
+ #joystick{width:108px;height:108px}
+ #mobileButtons button{width:64px;height:64px}
+}
 </style>
 </head>
 <body>
@@ -66,13 +77,13 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
       <div class="row"><input id="code" maxlength="8" placeholder="ROOM CODE"><button id="join">Join Online Room</button></div>
       <button id="local">Create Local Two-Tab Room</button>
     </div>
-    <div id="status">Ready — v2.1 center-lock build loaded.</div>
-    <div id="version">DaDerpGame v2.1 • center-lock + censoring</div>
+    <div id="status">Ready — v2.2 mobile joystick build loaded.</div>
+    <div id="version">DaDerpGame v2.2 • mobile joystick + adaptive scaling</div>
   </div>
 </section>
 
 <section id="game" class="hidden">
-  <canvas id="world"></canvas>
+  <canvas id="world" tabindex="0"></canvas>
   <div id="topbar">
     <div class="pill">ROOM <b id="roomLabel">------</b></div>
     <div id="conn" class="pill offline">offline</div>
@@ -118,8 +129,21 @@ function setStatus(t,bad=false){$("status").textContent=t;$("status").style.colo
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.remove("show"),1800)}
 function cleanCode(s){return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)}
 function makeCode(){const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
-function resize(){const d=Math.min(devicePixelRatio||1,2);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);ctx.setTransform(d,0,0,d,0,0)}
-addEventListener("resize",resize);resize();
+function getViewSize(){
+ const vv=window.visualViewport;
+ return {w:Math.round(vv?.width||innerWidth),h:Math.round(vv?.height||innerHeight)};
+}
+function resize(){
+ const {w,h}=getViewSize();
+ const d=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.floor(w*d);canvas.height=Math.floor(h*d);
+ canvas.style.width=w+"px";canvas.style.height=h+"px";
+ ctx.setTransform(d,0,0,d,0,0);
+}
+addEventListener("resize",resize);
+window.visualViewport?.addEventListener("resize",resize);
+window.visualViewport?.addEventListener("scroll",resize);
+resize();
 
 async function send(type,data={}){
  const payload={type,senderId:me.id,sentAt:Date.now(),...data};
@@ -198,13 +222,46 @@ addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 addEventListener("blur",()=>keys.clear());
 
 function setupJoystick(){
- const base=$("joystick"),stick=$("stick");let pid=null;
- function move(e){const r=base.getBoundingClientRect();let x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,m=39,l=Math.hypot(x,y)||1;if(l>m){x=x/l*m;y=y/l*m}joy.x=x/m;joy.y=y/m;stick.style.transform=`translate(${x}px,${y}px)`}
- function reset(){pid=null;joy.x=joy.y=0;joy.active=false;stick.style.transform=""}
- base.addEventListener("pointerdown",e=>{pid=e.pointerId;base.setPointerCapture(pid);joy.active=true;move(e)});
- base.addEventListener("pointermove",e=>{if(e.pointerId===pid)move(e)});
- base.addEventListener("pointerup",reset);base.addEventListener("pointercancel",reset)
-}setupJoystick();
+ const base=$("joystick"),stick=$("stick");
+ let activeId=null;
+ function apply(clientX,clientY){
+   const r=base.getBoundingClientRect();
+   let x=clientX-r.left-r.width/2;
+   let y=clientY-r.top-r.height/2;
+   const max=r.width*0.29;
+   const len=Math.hypot(x,y)||1;
+   if(len>max){x=x/len*max;y=y/len*max}
+   joy.x=x/max;joy.y=y/max;joy.active=true;
+   stick.style.transform=`translate(${x}px,${y}px)`;
+ }
+ function reset(){
+   activeId=null;joy.x=0;joy.y=0;joy.active=false;
+   stick.style.transform="translate(0px,0px)";
+ }
+ base.addEventListener("pointerdown",e=>{
+   e.preventDefault();activeId=e.pointerId;
+   base.setPointerCapture?.(activeId);apply(e.clientX,e.clientY);
+ });
+ base.addEventListener("pointermove",e=>{
+   if(e.pointerId!==activeId)return;
+   e.preventDefault();apply(e.clientX,e.clientY);
+ });
+ base.addEventListener("pointerup",e=>{if(e.pointerId===activeId)reset()});
+ base.addEventListener("pointercancel",reset);
+ base.addEventListener("lostpointercapture",reset);
+ base.addEventListener("touchstart",e=>{
+   e.preventDefault();const t=e.changedTouches[0];activeId="touch";apply(t.clientX,t.clientY);
+ },{passive:false});
+ base.addEventListener("touchmove",e=>{
+   if(activeId!=="touch")return;
+   e.preventDefault();const t=e.changedTouches[0];apply(t.clientX,t.clientY);
+ },{passive:false});
+ base.addEventListener("touchend",e=>{e.preventDefault();reset()},{passive:false});
+ base.addEventListener("touchcancel",reset,{passive:false});
+ document.addEventListener("visibilitychange",()=>{if(document.hidden)reset()});
+ window.addEventListener("blur",reset);
+}
+setupJoystick();
 
 $("drawBtn").onclick=toggleDraw;$("mobileDraw").onclick=toggleDraw;
 function toggleDraw(){drawMode=!drawMode;$("drawBtn").textContent="Draw: "+(drawMode?"ON":"OFF");$("mobileDraw").textContent=drawMode?"MOVE":"DRAW";toast(drawMode?"Draw inside pink zone":"Movement enabled")}
@@ -224,12 +281,13 @@ function update(dt){
  const l=Math.hypot(x,y);if(l>0){x/=l;y/=l}const speed=300;me.x=clamp(me.x+x*speed*dt,20,WORLD.w-20);me.y=clamp(me.y+y*speed*dt,20,WORLD.h-20);
  const now=performance.now();if(now-lastMoveSend>55){send("move",{id:me.id,x:me.x,y:me.y});lastMoveSend=now}
  for(const [id,t] of targets){const p=players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}
- const maxCamX=Math.max(0,WORLD.w-innerWidth),maxCamY=Math.max(0,WORLD.h-innerHeight);
- const tx=clamp(me.x-innerWidth/2,0,maxCamX),ty=clamp(me.y-innerHeight/2,0,maxCamY);
+ const view=getViewSize();
+ const maxCamX=Math.max(0,WORLD.w-view.w),maxCamY=Math.max(0,WORLD.h-view.h);
+ const tx=clamp(me.x-view.w/2,0,maxCamX),ty=clamp(me.y-view.h/2,0,maxCamY);
  cam.x=tx;cam.y=ty
 }
 function draw(){
- ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();ctx.translate(-cam.x,-cam.y);
+ const view=getViewSize();ctx.clearRect(0,0,view.w,view.h);ctx.save();ctx.translate(-cam.x,-cam.y);
  ctx.fillStyle="#17263d";ctx.fillRect(0,0,WORLD.w,WORLD.h);
  ctx.strokeStyle="#ffffff0d";ctx.lineWidth=1;for(let x=0;x<WORLD.w;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD.h);ctx.stroke()}for(let y=0;y<WORLD.h;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD.w,y);ctx.stroke()}
  ctx.fillStyle="#251a38";ctx.fillRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.strokeStyle="#ff4fc3";ctx.lineWidth=5;ctx.setLineDash([18,12]);ctx.strokeRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.setLineDash([]);ctx.fillStyle="#ffc9ef";ctx.font="bold 24px Arial";ctx.fillText("DRAWING ZONE",DRAW.x+24,DRAW.y+40);
