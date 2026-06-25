@@ -1,25 +1,13 @@
-# DaDerpGame v4
+# DaDerpGame v4.1 — Center-Lock Camera
 
-A full replacement build based on the uploaded repository.
+This update keeps your local cube at the exact center of the screen while moving.
 
-## Included
-- Fixed, functional game hub buttons
-- OG Derp online and local rooms
-- Working WASD, arrow keys, camera follow, and mobile joystick
-- Chat and basic censoring
-- Shared drawing zone
-- Cube color, face, and hat customization
-- Friend codes saved in the browser
-- Playable prototype entry points for Evil Boi, Create Mode, and Platformer Chaos
-- Responsive phone, tablet, desktop, and landscape layout
-- No real-money purchases
+## Changes
+- Local player remains centered at all times.
+- The map scrolls underneath the cube.
+- Center-lock also works near map edges.
+- Areas outside the map use a dark background instead of moving the cube away from center.
+- Existing mobile joystick, WASD, arrow controls, chat, customization, friends, drawing, and online rooms remain included.
 
 ## Install
-Upload the contents of this folder to the root of the GitHub repository:
-- index.html
-- style.css
-- config.js
-- app.js
-- README.md
-
-Delete or overwrite the old root files so old scripts do not load.
+Replace the root project files with the files in this folder and commit them.
