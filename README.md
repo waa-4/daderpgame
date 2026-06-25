@@ -1,13 +1,14 @@
-# DaDerpGame v4.1 — Center-Lock Camera
+# DaDerpGame v4.2 — Player Center Fix
 
-This update keeps your local cube at the exact center of the screen while moving.
+This fixes the issue where only the camera moved while the visible cube stayed behind.
 
-## Changes
-- Local player remains centered at all times.
-- The map scrolls underneath the cube.
-- Center-lock also works near map edges.
-- Areas outside the map use a dark background instead of moving the cube away from center.
-- Existing mobile joystick, WASD, arrow controls, chat, customization, friends, drawing, and online rooms remain included.
+## Cause
+The local player's network hello message replaced the live player object with a copied object. Movement updated the live object, while the renderer kept drawing the old copy.
 
-## Install
-Replace the root project files with the files in this folder and commit them.
+## Fixes
+- The local player is never replaced by a network copy.
+- The renderer always draws the live local player object.
+- The local player stays exactly in the center while the map moves.
+- Mobile joystick, WASD, arrows, customization, friends, chat, drawing, and online rooms remain included.
+
+Replace all root files with this version.
