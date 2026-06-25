@@ -1,41 +1,18 @@
-# DaDerpGame v1
+# DaDerpGame v2 Full Replacement
 
-A private-room multiplayer cube hangout for GitHub Pages.
+This build is intentionally a single-file website.
 
-## Included
-- Supabase Realtime rooms with six-character codes
-- Up to 8 players
-- WASD, arrows, and mobile joystick
-- Synced cube movement, names, and colors
-- Shared drawing zone with brush controls
-- Undo your own latest stroke
-- Host-only clear drawing
-- Preset speech bubbles
-- Speed, bounce, random-color, and launch pads
-- Kickable balls
-- Local two-tab mode using BroadcastChannel
+Upload `index.html` to the root of your GitHub repository and remove or ignore the old `game.js`, `multiplayer.js`, `style.css`, and `config.js`. The new page does not use them.
 
-## Publish on GitHub Pages
-1. Upload all files to a GitHub repository.
-2. Open **Settings → Pages**.
-3. Choose **Deploy from a branch**.
-4. Select your branch and the root folder.
-5. Open the generated Pages URL.
-
-## Controls
-Desktop: WASD/arrows to move, E to interact. Toggle Draw and drag inside the pink zone.
-
-Mobile: left joystick to move, DRAW/MOVE to toggle drawing, USE to interact.
-
-## Security note
-`config.js` contains a browser-safe Supabase publishable key. Never add a secret key, service-role key, database password, or account password.
-
-This is a friends-only relaxed multiplayer game. It is not an authoritative competitive server, so host-only controls are client-enforced.
-
-
-## v1.1 movement repair
-
-- Camera now stays centered on the local cube.
-- WASD and arrow-key input is captured reliably.
-- The mobile joystick has higher UI priority and prevents browser gestures while dragged.
-- Movement input clears when the tab loses focus.
+Features:
+- Camera follows your cube
+- WASD and arrow movement
+- Mobile joystick
+- Online Supabase rooms
+- Local two-tab rooms
+- Room chat
+- Quick messages
+- Chat bubbles over cubes
+- Shared drawing zone
+- Host clear and personal undo
+- Single-file build to avoid cache/version mismatch problems

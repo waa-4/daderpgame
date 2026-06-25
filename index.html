@@ -1,65 +1,226 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#0b1020">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>DaDerpGame v1.2</title>
-  <link rel="stylesheet" href="style.css?v=12-camera-joystick-20260625">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>DaDerpGame v2</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09101d;color:#eef7ff;font-family:Arial,Helvetica,sans-serif}
+button,input{font:inherit}button{cursor:pointer}
+.hidden{display:none!important}
+#lobby{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 20% 10%,#193a5a 0,transparent 35%),radial-gradient(circle at 80% 90%,#42224b 0,transparent 35%),#09101d;padding:18px}
+.card{width:min(650px,100%);background:rgba(11,18,34,.95);border:1px solid #355174;border-radius:24px;padding:24px;box-shadow:0 24px 80px #0009}
+h1{font-size:clamp(38px,8vw,72px);margin:0;letter-spacing:-3px}.sub{color:#9db0c8;margin:8px 0 22px}
+.grid{display:grid;grid-template-columns:1fr 130px;gap:12px}.field{display:grid;gap:6px;color:#aabbd0;font-size:14px}
+input{width:100%;border:1px solid #304766;background:#0c1728;color:#fff;border-radius:12px;padding:12px}
+input[type=color]{height:45px;padding:3px}
+.actions{display:grid;gap:10px;margin-top:16px}.row{display:flex;gap:10px}.row>*{flex:1}
+button{border:1px solid #36506f;background:#182941;color:#fff;border-radius:12px;padding:11px 14px}
+button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478b6,#25bed2);font-weight:800}.danger{background:#522230;border-color:#8c3a50}
+#status{margin-top:14px;background:#0d1727;border:1px solid #243b57;border-radius:12px;padding:11px;min-height:42px;color:#b9eaff}
+#game{position:fixed;inset:0;background:#0a1120}
+#world{display:block;width:100%;height:100%;touch-action:none}
+#topbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:8px;align-items:center;pointer-events:none}
+#topbar>*{pointer-events:auto}.pill{background:#0d1728dd;border:1px solid #2f4565;border-radius:12px;padding:9px 11px}.online{color:#8effa7}.offline{color:#ff9eaa}
+#topbar .spacer{flex:1}
+.panel{position:absolute;background:#0d1728e8;border:1px solid #2c4260;border-radius:16px;padding:12px;backdrop-filter:blur(8px);box-shadow:0 14px 50px #0007}
+#players{left:10px;top:63px;width:200px;max-height:40vh;overflow:auto}
+#players h3,#chat h3{margin:0 0 8px;font-size:15px}
+.player{display:flex;align-items:center;gap:8px;background:#132137;border-radius:10px;padding:8px;margin-bottom:6px}.dot{width:16px;height:16px;border-radius:4px;border:1px solid #fff6}.host{margin-left:auto;font-size:10px;color:#ffd878}
+#chat{right:10px;top:63px;width:320px;height:390px;display:flex;flex-direction:column}
+#messages{flex:1;overflow:auto;background:#091322;border-radius:10px;padding:8px;margin-bottom:8px}
+.msg{margin-bottom:8px;line-height:1.3;word-break:break-word}.msg b{color:#80dcff}.system{color:#9baec7;font-style:italic}
+#chatControls{display:flex;gap:6px}#chatInput{flex:1;padding:9px}#sendBtn{padding:9px 12px}
+#quick{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}#quick button{padding:6px 8px;font-size:11px}
+#tools{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:7px;background:#0d1728e8;border:1px solid #2d4463;border-radius:16px;padding:8px}
+#tools button{padding:8px 10px;font-size:12px}#brushColor{width:42px;padding:2px}
+#joystick{display:none;position:absolute;left:22px;bottom:24px;width:132px;height:132px;border-radius:50%;background:#14233b99;border:2px solid #fff4;touch-action:none}
+#stick{position:absolute;width:54px;height:54px;left:37px;top:37px;border-radius:50%;background:#48d8ffcc;border:2px solid #fff}
+#mobileButtons{display:none;position:absolute;right:22px;bottom:30px;gap:12px}
+#mobileButtons button{width:76px;height:76px;border-radius:50%;font-weight:900}
+#toast{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);background:#07111fee;border:1px solid #31506f;border-radius:999px;padding:10px 15px;opacity:0;transition:.2s;pointer-events:none}#toast.show{opacity:1}
+#version{font-size:12px;color:#7f95ad;margin-top:10px}
+@media(max-width:800px){
+ #players{display:none}#chat{top:auto;bottom:168px;right:8px;width:min(330px,calc(100% - 16px));height:235px}
+ #tools{bottom:8px;left:8px;right:8px;transform:none;justify-content:center}
+ #tools button:nth-of-type(n+4),#brushColor{display:none}
+ #joystick,#mobileButtons{display:flex}
+ #toast{bottom:165px}
+}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.row{flex-direction:column}.card{padding:18px}#chat{height:210px}}
+</style>
 </head>
 <body>
-  <section id="lobby" class="screen show">
-    <main class="card">
-      <div class="brand"><i></i><div><h1>DaDerpGame</h1><p>private cube hangout + drawing chaos</p></div></div>
-      <div class="inputs">
-        <label>Name<input id="name" maxlength="18" placeholder="Derp"></label>
-        <label>Cube color<input id="color" type="color" value="#46d7ff"></label>
-      </div>
-      <button id="create" class="primary">Create Private Room</button>
-      <div class="join"><input id="code" maxlength="8" placeholder="ROOM CODE"><button id="join">Join</button></div>
-      <button id="local" class="ghost">Create Local Two-Tab Room</button>
-      <div id="status">Ready — movement build v1.2 loaded.</div>
-      <small>WASD / arrow keys move the cube. Touch devices get a joystick. The camera follows your cube.</small>
-    </main>
-  </section>
-
-  <section id="game" class="screen">
-    <canvas id="canvas" tabindex="0"></canvas>
-    <header>
-      <span>ROOM <b id="room">------</b></span>
-      <span id="conn" class="offline">offline</span>
-      <button id="copy">Copy</button>
-      <button id="leave" class="danger">Leave</button>
-    </header>
-    <aside id="players" class="panel"><h2>Players</h2><div id="playerList"></div></aside>
-    <aside id="tools" class="panel">
-      <h2>Stuff</h2>
-      <div><button id="draw">Draw: OFF</button><input id="brush" type="color" value="#ff4fc3"><input id="size" type="range" min="2" max="24" value="7"></div>
-      <div><button id="undo">Undo Mine</button><button id="clear">Clear All</button></div>
-      <div><button data-msg="hello!">hello!</button><button data-msg="follow me">follow me</button><button data-msg="LOL">LOL</button></div>
-      <div><button id="random">Random Cube</button><button id="spawn">Spawn</button></div>
-      <p>Draw in the pink zone. Walk into pads. Press E/USE near a ball.</p>
-    </aside>
-    <div id="mobile">
-      <div id="joy"><i></i></div>
-      <button id="mDraw">DRAW</button>
-      <button id="use">USE</button>
+<section id="lobby">
+  <div class="card">
+    <h1>DaDerpGame</h1>
+    <div class="sub">private cube rooms, drawing, chat, and random chill nonsense</div>
+    <div class="grid">
+      <label class="field">Display name<input id="name" maxlength="18" placeholder="Derp"></label>
+      <label class="field">Cube color<input id="color" type="color" value="#46d7ff"></label>
     </div>
-    <div id="toast"></div>
-  </section>
+    <div class="actions">
+      <button id="create" class="primary">Create Online Room</button>
+      <div class="row"><input id="code" maxlength="8" placeholder="ROOM CODE"><button id="join">Join Online Room</button></div>
+      <button id="local">Create Local Two-Tab Room</button>
+    </div>
+    <div id="status">Ready — full replacement v2 loaded.</div>
+    <div id="version">DaDerpGame v2.0 • single-file build</div>
+  </div>
+</section>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=12-camera-joystick-20260625"></script>
-  <script src="multiplayer.js?v=12-camera-joystick-20260625"></script>
-  <script src="game.js?v=12-camera-joystick-20260625"></script>
-  <script>
-    window.addEventListener('error', function (event) {
-      var status = document.getElementById('status');
-      if (status) status.textContent = 'JavaScript error: ' + event.message;
-    });
-  </script>
+<section id="game" class="hidden">
+  <canvas id="world"></canvas>
+  <div id="topbar">
+    <div class="pill">ROOM <b id="roomLabel">------</b></div>
+    <div id="conn" class="pill offline">offline</div>
+    <button id="copy">Copy Code</button><div class="spacer"></div><button id="leave" class="danger">Leave</button>
+  </div>
+  <aside id="players" class="panel"><h3>Players</h3><div id="playerList"></div></aside>
+  <aside id="chat" class="panel">
+    <h3>Room Chat</h3><div id="messages"></div>
+    <div id="chatControls"><input id="chatInput" maxlength="160" placeholder="say something..."><button id="sendBtn">Send</button></div>
+    <div id="quick">
+      <button data-q="hello!">hello!</button><button data-q="LOL">LOL</button><button data-q="follow me">follow me</button>
+      <button data-q="bruh">bruh</button><button data-q="kitteh of agreement">kitteh</button>
+    </div>
+  </aside>
+  <div id="tools">
+    <button id="drawBtn">Draw: OFF</button><input id="brushColor" type="color" value="#ff4fc3">
+    <button id="undo">Undo Mine</button><button id="clear">Clear All</button><button id="spawn">Spawn</button>
+  </div>
+  <div id="joystick"><div id="stick"></div></div>
+  <div id="mobileButtons"><button id="mobileDraw">DRAW</button><button id="use">USE</button></div>
+  <div id="toast"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const SUPABASE_URL="https://hjezefwwradgurpbkcfr.supabase.co";
+const SUPABASE_KEY="sb_publishable_Q7XxTFNOO0OTzpgodFmtjQ_4ga7p0MU";
+const ROOM_PREFIX="daderpgame-v2";
+const $=id=>document.getElementById(id);
+const canvas=$("world"),ctx=canvas.getContext("2d");
+const WORLD={w:2400,h:1600},SPAWN={x:420,y:420},DRAW={x:1050,y:180,w:1050,h:900};
+const uid=crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);
+let supa=null,channel=null,bc=null,localMode=false,room="",isHost=false,hostId=null,connected=false;
+let drawMode=false,drawing=false,lastPoint=null,lastMoveSend=0,lastDrawSend=0,lastFrame=performance.now(),toastTimer;
+const keys=new Set(),players=new Map(),targets=new Map(),strokes=[],mine=[],chatLog=[];
+const joy={x:0,y:0,active:false};
+const me={id:uid,name:localStorage.ddg_name||"Derp",color:localStorage.ddg_color||"#46d7ff",x:SPAWN.x,y:SPAWN.y,size:38,msg:"",msgUntil:0};
+$("name").value=me.name;$("color").value=me.color;
+
+function setStatus(t,bad=false){$("status").textContent=t;$("status").style.color=bad?"#ff9eaa":"#b9eaff"}
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.remove("show"),1800)}
+function cleanCode(s){return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)}
+function makeCode(){const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
+function resize(){const d=Math.min(devicePixelRatio||1,2);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);ctx.setTransform(d,0,0,d,0,0)}
+addEventListener("resize",resize);resize();
+
+async function send(type,data={}){
+ const payload={type,senderId:me.id,sentAt:Date.now(),...data};
+ if(localMode){bc?.postMessage(payload);receive(payload);return}
+ if(channel) await channel.send({type:"broadcast",event:"game",payload});
+}
+function receive(p){
+ if(!p||!p.type)return;
+ if(p.type==="hello"){players.set(p.player.id,{...p.player,size:38});if(p.host)hostId=p.player.id;renderPlayers();addSystem(p.player.name+" joined")}
+ if(p.type==="move"&&p.id!==me.id){if(!players.has(p.id))players.set(p.id,{id:p.id,name:"Cube",color:"#fff",x:p.x,y:p.y,size:38});targets.set(p.id,{x:p.x,y:p.y})}
+ if(p.type==="color"){const q=players.get(p.id);if(q)q.color=p.color;renderPlayers()}
+ if(p.type==="chat"){addChat(p.name,p.text,p.color);const q=players.get(p.senderId);if(q){q.msg=p.text;q.msgUntil=Date.now()+4000}}
+ if(p.type==="draw"&&p.senderId!==me.id){strokes.push(p);if(strokes.length>3000)strokes.shift()}
+ if(p.type==="undo"){for(let i=strokes.length-1;i>=0;i--)if(strokes[i].id===p.strokeId){strokes.splice(i,1);break}}
+ if(p.type==="clear"){strokes.length=0;mine.length=0}
+ if(p.type==="request_snapshot"&&isHost&&p.senderId!==me.id)send("snapshot",{target:p.senderId,strokes:strokes.slice(-1800),players:[...players.values()]})
+ if(p.type==="snapshot"&&p.target===me.id){strokes.length=0;strokes.push(...(p.strokes||[]));for(const q of p.players||[])players.set(q.id,{...q,size:38});renderPlayers()}
+ if(p.type==="leave"){const q=players.get(p.id);if(q)addSystem(q.name+" left");players.delete(p.id);renderPlayers()}
+}
+async function joinRoom(code,useLocal,host){
+ me.name=($("name").value||"Derp").trim().slice(0,18);me.color=$("color").value;
+ localStorage.ddg_name=me.name;localStorage.ddg_color=me.color;
+ room=code;localMode=useLocal;isHost=host;hostId=host?me.id:null;
+ $("roomLabel").textContent=room;setStatus("Connecting...");
+ try{
+  if(localMode){
+   bc=new BroadcastChannel(ROOM_PREFIX+":"+room);bc.onmessage=e=>receive(e.data);connected=true;
+  }else{
+   if(!window.supabase)throw new Error("Supabase library did not load.");
+   supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+   channel=supa.channel(ROOM_PREFIX+":"+room,{config:{presence:{key:me.id},broadcast:{self:true}}});
+   channel.on("broadcast",{event:"game"},({payload})=>receive(payload));
+   await new Promise((res,rej)=>{let t=setTimeout(()=>rej(new Error("Realtime connection timed out.")),12000);channel.subscribe(async s=>{if(s==="SUBSCRIBED"){clearTimeout(t);connected=true;await channel.track({id:me.id,name:me.name,color:me.color,host:isHost});res()}else if(s==="CHANNEL_ERROR"||s==="TIMED_OUT"){clearTimeout(t);rej(new Error("Realtime failed: "+s))}})});
+  }
+  players.clear();players.set(me.id,me);$("lobby").classList.add("hidden");$("game").classList.remove("hidden");
+  $("conn").textContent="online";$("conn").className="pill online";
+  send("hello",{player:{id:me.id,name:me.name,color:me.color,x:me.x,y:me.y},host:isHost});send("request_snapshot",{});
+  renderPlayers();addSystem("Joined room "+room);canvas.focus();toast("Movement ready: WASD / arrows / joystick");
+ }catch(e){console.error(e);setStatus(e.message||"Could not connect.",true)}
+}
+$("create").onclick=()=>joinRoom(makeCode(),false,true);
+$("join").onclick=()=>{const c=cleanCode($("code").value);if(c.length<4)return setStatus("Enter a valid room code.",true);joinRoom(c,false,false)};
+$("local").onclick=()=>joinRoom(makeCode(),true,true);
+$("copy").onclick=async()=>{await navigator.clipboard?.writeText(room).catch(()=>{});toast("Code copied")};
+$("leave").onclick=async()=>{await send("leave",{id:me.id}).catch(()=>{});if(channel&&supa)await supa.removeChannel(channel).catch(()=>{});bc?.close();location.reload()};
+
+function renderPlayers(){
+ const box=$("playerList");box.innerHTML="";
+ for(const p of players.values()){const d=document.createElement("div");d.className="player";d.innerHTML='<span class="dot"></span><span></span>';d.querySelector(".dot").style.background=p.color;d.querySelectorAll("span")[1].textContent=p.name;if(p.id===hostId||p.id===me.id&&isHost){const h=document.createElement("span");h.className="host";h.textContent="HOST";d.append(h)}box.append(d)}
+}
+function addChat(name,text,color){chatLog.push({name,text,color});if(chatLog.length>80)chatLog.shift();const d=document.createElement("div");d.className="msg";const b=document.createElement("b");b.textContent=name+": ";b.style.color=color||"#80dcff";d.append(b,document.createTextNode(text));$("messages").append(d);$("messages").scrollTop=1e9}
+function addSystem(text){const d=document.createElement("div");d.className="msg system";d.textContent=text;$("messages").append(d);$("messages").scrollTop=1e9}
+function sendChat(text){text=String(text||"").trim().slice(0,160);if(!text)return;send("chat",{name:me.name,text,color:me.color});$("chatInput").value=""}
+$("sendBtn").onclick=()=>sendChat($("chatInput").value);
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();sendChat(e.target.value)}});
+document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>sendChat(b.dataset.q));
+
+addEventListener("keydown",e=>{if(document.activeElement===$("chatInput"))return;const k=e.key.toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys.add(k);e.preventDefault()}if(k==="e")interact()});
+addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+addEventListener("blur",()=>keys.clear());
+
+function setupJoystick(){
+ const base=$("joystick"),stick=$("stick");let pid=null;
+ function move(e){const r=base.getBoundingClientRect();let x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,m=39,l=Math.hypot(x,y)||1;if(l>m){x=x/l*m;y=y/l*m}joy.x=x/m;joy.y=y/m;stick.style.transform=`translate(${x}px,${y}px)`}
+ function reset(){pid=null;joy.x=joy.y=0;joy.active=false;stick.style.transform=""}
+ base.addEventListener("pointerdown",e=>{pid=e.pointerId;base.setPointerCapture(pid);joy.active=true;move(e)});
+ base.addEventListener("pointermove",e=>{if(e.pointerId===pid)move(e)});
+ base.addEventListener("pointerup",reset);base.addEventListener("pointercancel",reset)
+}setupJoystick();
+
+$("drawBtn").onclick=toggleDraw;$("mobileDraw").onclick=toggleDraw;
+function toggleDraw(){drawMode=!drawMode;$("drawBtn").textContent="Draw: "+(drawMode?"ON":"OFF");$("mobileDraw").textContent=drawMode?"MOVE":"DRAW";toast(drawMode?"Draw inside pink zone":"Movement enabled")}
+$("spawn").onclick=()=>{me.x=SPAWN.x;me.y=SPAWN.y};
+$("undo").onclick=()=>{const id=mine.pop();if(!id)return toast("Nothing to undo");for(let i=strokes.length-1;i>=0;i--)if(strokes[i].id===id){strokes.splice(i,1);break}send("undo",{strokeId:id})};
+$("clear").onclick=()=>{if(!isHost)return toast("Host only");strokes.length=0;mine.length=0;send("clear",{})};
+$("use").onclick=interact;
+function interact(){me.color="#"+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,"0");send("color",{id:me.id,color:me.color});toast("Randomized cube color")}
+
+canvas.addEventListener("pointerdown",e=>{if(!drawMode)return;const p=screenToWorld(e.clientX,e.clientY);if(!inside(p,DRAW))return toast("Draw in the pink zone");drawing=true;lastPoint=p});
+canvas.addEventListener("pointermove",e=>{if(!drawing||!drawMode)return;const now=performance.now();if(now-lastDrawSend<25)return;const p=screenToWorld(e.clientX,e.clientY);if(!inside(p,DRAW)||!lastPoint)return;const s={id:me.id+"-"+Date.now()+"-"+Math.random(),owner:me.id,x1:lastPoint.x,y1:lastPoint.y,x2:p.x,y2:p.y,color:$("brushColor").value,size:7};strokes.push(s);mine.push(s.id);send("draw",s);lastPoint=p;lastDrawSend=now});
+addEventListener("pointerup",()=>{drawing=false;lastPoint=null});
+
+const cam={x:0,y:0};
+function update(dt){
+ let x=0,y=0;if(!drawMode){if(keys.has("a")||keys.has("arrowleft"))x--;if(keys.has("d")||keys.has("arrowright"))x++;if(keys.has("w")||keys.has("arrowup"))y--;if(keys.has("s")||keys.has("arrowdown"))y++;x+=joy.x;y+=joy.y}
+ const l=Math.hypot(x,y);if(l>0){x/=l;y/=l}const speed=300;me.x=clamp(me.x+x*speed*dt,20,WORLD.w-20);me.y=clamp(me.y+y*speed*dt,20,WORLD.h-20);
+ const now=performance.now();if(now-lastMoveSend>55){send("move",{id:me.id,x:me.x,y:me.y});lastMoveSend=now}
+ for(const [id,t] of targets){const p=players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}
+ const tx=me.x-innerWidth/2,ty=me.y-innerHeight/2;cam.x+=(tx-cam.x)*Math.min(1,dt*10);cam.y+=(ty-cam.y)*Math.min(1,dt*10);cam.x=clamp(cam.x,0,Math.max(0,WORLD.w-innerWidth));cam.y=clamp(cam.y,0,Math.max(0,WORLD.h-innerHeight))
+}
+function draw(){
+ ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();ctx.translate(-cam.x,-cam.y);
+ ctx.fillStyle="#17263d";ctx.fillRect(0,0,WORLD.w,WORLD.h);
+ ctx.strokeStyle="#ffffff0d";ctx.lineWidth=1;for(let x=0;x<WORLD.w;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD.h);ctx.stroke()}for(let y=0;y<WORLD.h;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD.w,y);ctx.stroke()}
+ ctx.fillStyle="#251a38";ctx.fillRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.strokeStyle="#ff4fc3";ctx.lineWidth=5;ctx.setLineDash([18,12]);ctx.strokeRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.setLineDash([]);ctx.fillStyle="#ffc9ef";ctx.font="bold 24px Arial";ctx.fillText("DRAWING ZONE",DRAW.x+24,DRAW.y+40);
+ ctx.fillStyle="#203650";ctx.fillRect(220,220,620,420);ctx.fillStyle="#162e2e";ctx.fillRect(190,760,730,430);
+ for(const s of strokes){ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.strokeStyle=s.color;ctx.lineWidth=s.size;ctx.lineCap="round";ctx.stroke()}
+ for(const p of players.values())drawPlayer(p);if(!players.has(me.id))drawPlayer(me);
+ ctx.strokeStyle="#526681";ctx.lineWidth=8;ctx.strokeRect(0,0,WORLD.w,WORLD.h);ctx.restore()
+}
+function drawPlayer(p){const s=p.size||38;ctx.fillStyle=p.color||"#fff";ctx.fillRect(p.x-s/2,p.y-s/2,s,s);ctx.strokeStyle="#0009";ctx.lineWidth=4;ctx.strokeRect(p.x-s/2,p.y-s/2,s,s);ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.fillText(p.name||"Cube",p.x,p.y-s/2-10);if(p.msg&&p.msgUntil>Date.now()){const w=Math.max(80,ctx.measureText(p.msg).width+20);ctx.fillStyle="#08111eee";ctx.fillRect(p.x-w/2,p.y-s/2-55,w,28);ctx.fillStyle="#fff";ctx.fillText(p.msg,p.x,p.y-s/2-36)}ctx.textAlign="left"}
+function loop(t){const dt=Math.min(.04,(t-lastFrame)/1000);lastFrame=t;if(!$("game").classList.contains("hidden"))update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function screenToWorld(x,y){return{x:x+cam.x,y:y+cam.y}}function inside(p,r){return p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h}function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+</script>
 </body>
 </html>
