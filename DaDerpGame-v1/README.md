@@ -31,11 +31,3 @@ Mobile: left joystick to move, DRAW/MOVE to toggle drawing, USE to interact.
 `config.js` contains a browser-safe Supabase publishable key. Never add a secret key, service-role key, database password, or account password.
 
 This is a friends-only relaxed multiplayer game. It is not an authoritative competitive server, so host-only controls are client-enforced.
-
-
-## v1.1 movement repair
-
-- Camera now stays centered on the local cube.
-- WASD and arrow-key input is captured reliably.
-- The mobile joystick has higher UI priority and prevents browser gestures while dragged.
-- Movement input clears when the tab loses focus.
