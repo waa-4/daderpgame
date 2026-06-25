@@ -1,0 +1,1 @@
+window.DADERP_CONFIG={SUPABASE_URL:'https://hjezefwwradgurpbkcfr.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_Q7XxTFNOO0OTzpgodFmtjQ_4ga7p0MU',ROOM_PREFIX:'daderpgame',MOVE_MS:70,DRAW_MS:35,MAX_PLAYERS:8};
