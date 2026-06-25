@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>DaDerpGame v2</title>
+<title>DaDerpGame v2.1</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09101d;color:#eef7ff;font-family:Arial,Helvetica,sans-serif}
 button,input{font:inherit}button{cursor:pointer}
@@ -39,6 +39,7 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
 #stick{position:absolute;width:54px;height:54px;left:37px;top:37px;border-radius:50%;background:#48d8ffcc;border:2px solid #fff}
 #mobileButtons{display:none;position:absolute;right:22px;bottom:30px;gap:12px}
 #mobileButtons button{width:76px;height:76px;border-radius:50%;font-weight:900}
+#cameraMode{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border:1px dashed #ffffff22;border-radius:12px;pointer-events:none}
 #toast{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);background:#07111fee;border:1px solid #31506f;border-radius:999px;padding:10px 15px;opacity:0;transition:.2s;pointer-events:none}#toast.show{opacity:1}
 #version{font-size:12px;color:#7f95ad;margin-top:10px}
 @media(max-width:800px){
@@ -65,8 +66,8 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
       <div class="row"><input id="code" maxlength="8" placeholder="ROOM CODE"><button id="join">Join Online Room</button></div>
       <button id="local">Create Local Two-Tab Room</button>
     </div>
-    <div id="status">Ready — full replacement v2 loaded.</div>
-    <div id="version">DaDerpGame v2.0 • single-file build</div>
+    <div id="status">Ready — v2.1 center-lock build loaded.</div>
+    <div id="version">DaDerpGame v2.1 • center-lock + censoring</div>
   </div>
 </section>
 
@@ -92,7 +93,8 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
   </div>
   <div id="joystick"><div id="stick"></div></div>
   <div id="mobileButtons"><button id="mobileDraw">DRAW</button><button id="use">USE</button></div>
-  <div id="toast"></div>
+  <div id="cameraMode" title="Your cube stays centered while the world moves"></div>
+<div id="toast"></div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -126,10 +128,10 @@ async function send(type,data={}){
 }
 function receive(p){
  if(!p||!p.type)return;
- if(p.type==="hello"){players.set(p.player.id,{...p.player,size:38});if(p.host)hostId=p.player.id;renderPlayers();addSystem(p.player.name+" joined")}
+ if(p.type==="hello"){p.player.name=cleanName(p.player.name);players.set(p.player.id,{...p.player,size:38});if(p.host)hostId=p.player.id;renderPlayers();addSystem(p.player.name+" joined")}
  if(p.type==="move"&&p.id!==me.id){if(!players.has(p.id))players.set(p.id,{id:p.id,name:"Cube",color:"#fff",x:p.x,y:p.y,size:38});targets.set(p.id,{x:p.x,y:p.y})}
  if(p.type==="color"){const q=players.get(p.id);if(q)q.color=p.color;renderPlayers()}
- if(p.type==="chat"){addChat(p.name,p.text,p.color);const q=players.get(p.senderId);if(q){q.msg=p.text;q.msgUntil=Date.now()+4000}}
+ if(p.type==="chat"){p.name=cleanName(p.name);p.text=censorText(p.text);addChat(p.name,p.text,p.color);const q=players.get(p.senderId);if(q){q.msg=p.text;q.msgUntil=Date.now()+4000}}
  if(p.type==="draw"&&p.senderId!==me.id){strokes.push(p);if(strokes.length>3000)strokes.shift()}
  if(p.type==="undo"){for(let i=strokes.length-1;i>=0;i--)if(strokes[i].id===p.strokeId){strokes.splice(i,1);break}}
  if(p.type==="clear"){strokes.length=0;mine.length=0}
@@ -138,7 +140,7 @@ function receive(p){
  if(p.type==="leave"){const q=players.get(p.id);if(q)addSystem(q.name+" left");players.delete(p.id);renderPlayers()}
 }
 async function joinRoom(code,useLocal,host){
- me.name=($("name").value||"Derp").trim().slice(0,18);me.color=$("color").value;
+ me.name=cleanName($("name").value);me.color=$("color").value;
  localStorage.ddg_name=me.name;localStorage.ddg_color=me.color;
  room=code;localMode=useLocal;isHost=host;hostId=host?me.id:null;
  $("roomLabel").textContent=room;setStatus("Connecting...");
@@ -168,9 +170,25 @@ function renderPlayers(){
  const box=$("playerList");box.innerHTML="";
  for(const p of players.values()){const d=document.createElement("div");d.className="player";d.innerHTML='<span class="dot"></span><span></span>';d.querySelector(".dot").style.background=p.color;d.querySelectorAll("span")[1].textContent=p.name;if(p.id===hostId||p.id===me.id&&isHost){const h=document.createElement("span");h.className="host";h.textContent="HOST";d.append(h)}box.append(d)}
 }
+
+const BLOCKED_WORDS=[
+  "fuck","fucker","fucking","shit","bitch","bastard","asshole",
+  "nigger","nigga","faggot","retard","cunt","kys"
+];
+function censorText(value){
+  let out=String(value||"");
+  for(const word of BLOCKED_WORDS){
+    const escaped=word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    out=out.replace(new RegExp("\\b"+escaped+"\\b","gi"),m=>"*".repeat(Math.max(3,m.length)));
+  }
+  return out;
+}
+function cleanName(value){
+  return censorText(String(value||"Derp").replace(/[<>]/g,"").trim()).slice(0,18)||"Derp";
+}
 function addChat(name,text,color){chatLog.push({name,text,color});if(chatLog.length>80)chatLog.shift();const d=document.createElement("div");d.className="msg";const b=document.createElement("b");b.textContent=name+": ";b.style.color=color||"#80dcff";d.append(b,document.createTextNode(text));$("messages").append(d);$("messages").scrollTop=1e9}
 function addSystem(text){const d=document.createElement("div");d.className="msg system";d.textContent=text;$("messages").append(d);$("messages").scrollTop=1e9}
-function sendChat(text){text=String(text||"").trim().slice(0,160);if(!text)return;send("chat",{name:me.name,text,color:me.color});$("chatInput").value=""}
+function sendChat(text){text=censorText(String(text||"").trim()).slice(0,160);if(!text)return;send("chat",{name:me.name,text,color:me.color});$("chatInput").value=""}
 $("sendBtn").onclick=()=>sendChat($("chatInput").value);
 $("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();sendChat(e.target.value)}});
 document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>sendChat(b.dataset.q));
@@ -206,7 +224,9 @@ function update(dt){
  const l=Math.hypot(x,y);if(l>0){x/=l;y/=l}const speed=300;me.x=clamp(me.x+x*speed*dt,20,WORLD.w-20);me.y=clamp(me.y+y*speed*dt,20,WORLD.h-20);
  const now=performance.now();if(now-lastMoveSend>55){send("move",{id:me.id,x:me.x,y:me.y});lastMoveSend=now}
  for(const [id,t] of targets){const p=players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}
- const tx=me.x-innerWidth/2,ty=me.y-innerHeight/2;cam.x+=(tx-cam.x)*Math.min(1,dt*10);cam.y+=(ty-cam.y)*Math.min(1,dt*10);cam.x=clamp(cam.x,0,Math.max(0,WORLD.w-innerWidth));cam.y=clamp(cam.y,0,Math.max(0,WORLD.h-innerHeight))
+ const maxCamX=Math.max(0,WORLD.w-innerWidth),maxCamY=Math.max(0,WORLD.h-innerHeight);
+ const tx=clamp(me.x-innerWidth/2,0,maxCamX),ty=clamp(me.y-innerHeight/2,0,maxCamY);
+ cam.x=tx;cam.y=ty
 }
 function draw(){
  ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();ctx.translate(-cam.x,-cam.y);
@@ -215,7 +235,8 @@ function draw(){
  ctx.fillStyle="#251a38";ctx.fillRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.strokeStyle="#ff4fc3";ctx.lineWidth=5;ctx.setLineDash([18,12]);ctx.strokeRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.setLineDash([]);ctx.fillStyle="#ffc9ef";ctx.font="bold 24px Arial";ctx.fillText("DRAWING ZONE",DRAW.x+24,DRAW.y+40);
  ctx.fillStyle="#203650";ctx.fillRect(220,220,620,420);ctx.fillStyle="#162e2e";ctx.fillRect(190,760,730,430);
  for(const s of strokes){ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.strokeStyle=s.color;ctx.lineWidth=s.size;ctx.lineCap="round";ctx.stroke()}
- for(const p of players.values())drawPlayer(p);if(!players.has(me.id))drawPlayer(me);
+ for(const p of players.values())if(p.id!==me.id)drawPlayer(p);
+ drawPlayer(me);
  ctx.strokeStyle="#526681";ctx.lineWidth=8;ctx.strokeRect(0,0,WORLD.w,WORLD.h);ctx.restore()
 }
 function drawPlayer(p){const s=p.size||38;ctx.fillStyle=p.color||"#fff";ctx.fillRect(p.x-s/2,p.y-s/2,s,s);ctx.strokeStyle="#0009";ctx.lineWidth=4;ctx.strokeRect(p.x-s/2,p.y-s/2,s,s);ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.fillText(p.name||"Cube",p.x,p.y-s/2-10);if(p.msg&&p.msgUntil>Date.now()){const w=Math.max(80,ctx.measureText(p.msg).width+20);ctx.fillStyle="#08111eee";ctx.fillRect(p.x-w/2,p.y-s/2-55,w,28);ctx.fillStyle="#fff";ctx.fillText(p.msg,p.x,p.y-s/2-36)}ctx.textAlign="left"}
