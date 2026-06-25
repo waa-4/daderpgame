@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>DaDerpGame v2.2</title>
+<title>DaDerpGame v3 Game Hub</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09101d;color:#eef7ff;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;touch-action:none}
 button,input{font:inherit}button{cursor:pointer}
@@ -61,10 +61,14 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
  #joystick{width:108px;height:108px}
  #mobileButtons button{width:64px;height:64px}
 }
+
+#hub{position:fixed;inset:0;overflow:auto;background:radial-gradient(circle at 18% 15%,rgba(70,215,255,.18),transparent 30%),radial-gradient(circle at 82% 80%,rgba(255,79,195,.16),transparent 34%),linear-gradient(145deg,#08101d,#111a2e);padding:24px}
+.hub-shell{width:min(1180px,100%);margin:0 auto}.hub-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:24px}.hub-logo{width:74px;height:74px;border-radius:18px;background:linear-gradient(145deg,#46d7ff,#176da0);box-shadow:inset -12px -12px 0 #0003,0 0 30px #46d7ff33}.hub-title h1{margin:0;font-size:clamp(38px,7vw,72px);letter-spacing:-3px}.hub-title p{margin:6px 0 0;color:#9db0c8}.hub-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.game-card{position:relative;min-height:250px;border:1px solid #355174;border-radius:22px;padding:20px;overflow:hidden;background:#0f1a2ddd;box-shadow:0 18px 60px #0006}.game-card::after{content:"";position:absolute;inset:auto -40px -50px auto;width:180px;height:180px;border-radius:50%;background:var(--glow,#46d7ff);opacity:.12;filter:blur(8px)}.game-card h2{font-size:30px;margin:0 0 8px}.game-card p{color:#adc0d8;max-width:620px;line-height:1.45}.game-card .tag{display:inline-block;border:1px solid #ffffff2a;border-radius:999px;padding:5px 9px;font-size:11px;color:#d9e8f8;margin-bottom:13px}.game-card .card-actions{position:absolute;left:20px;right:20px;bottom:18px;display:flex;gap:8px;z-index:2}.game-card .card-actions button{flex:1}.game-card.og{--glow:#46d7ff}.game-card.evil{--glow:#ff5c73}.game-card.create{--glow:#ffcc61}.game-card.platform{--glow:#9c77ff}.coming{opacity:.88}.promise{margin-top:20px;border:1px solid #2b4666;background:#0d1727d9;border-radius:16px;padding:15px;color:#bdeaff;text-align:center;font-weight:700}#modePreview{position:fixed;inset:0;background:#050a12dd;display:none;place-items:center;padding:18px;z-index:100}#modePreview.show{display:grid}.preview-card{width:min(560px,100%);background:#0d1728;border:1px solid #36516f;border-radius:20px;padding:22px;box-shadow:0 24px 80px #000b}.preview-card h2{margin-top:0}.preview-card p{color:#adc0d8;line-height:1.5}.preview-actions{display:flex;gap:8px;margin-top:18px}.preview-actions button{flex:1}@media(max-width:760px){#hub{padding:14px}.game-grid{grid-template-columns:1fr}.hub-actions{margin-left:0;width:100%}.hub-actions button{flex:1}.game-card{min-height:270px}}
 </style>
 </head>
 <body>
-<section id="lobby">
+<section id="hub"><div class="hub-shell"><div class="hub-top"><div class="hub-logo"></div><div class="hub-title"><h1>DaDerpGame</h1><p>tiny 2D games for friends • no purchases with real money, ever</p></div><div class="hub-actions"><button id="hubProfileBtn">Profile</button><button id="hubJoinBtn">Join Room</button></div></div><div class="game-grid"><article class="game-card og"><span class="tag">PLAYABLE NOW</span><h2>OG Derp</h2><p>The original chill room: move around, chat, draw, change your cube color, and mess with your friends in private codes.</p><div class="card-actions"><button id="playOgBtn" class="primary">Play OG Derp</button></div></article><article class="game-card evil coming"><span class="tag">NEXT GAME</span><h2>Survive the Evil Boi</h2><p>One player becomes the Evil Boi. Everyone else must run, hide, and survive until the timer reaches zero.</p><div class="card-actions"><button data-preview="evil">View Plan</button></div></article><article class="game-card create coming"><span class="tag">PLANNED</span><h2>Create Mode</h2><p>Build tiny games with spawn areas, drawing boards, resizable squares, hazards, goals, and shareable links.</p><div class="card-actions"><button data-preview="create">View Plan</button></div></article><article class="game-card platform coming"><span class="tag">PLANNED</span><h2>Platformer Chaos</h2><p>A side-view platformer with building. Hide another player's builds for yourself and their collision turns off only for you.</p><div class="card-actions"><button data-preview="platform">View Plan</button></div></article></div><div class="promise">No microtransactions. No pay-to-win. Just derps.</div></div></section><div id="modePreview"><div class="preview-card"><h2 id="previewTitle">Mode</h2><p id="previewText"></p><div class="preview-actions"><button id="closePreview">Back to Hub</button></div></div></div>
+<section id="lobby" class="hidden">
   <div class="card">
     <h1>DaDerpGame</h1>
     <div class="sub">private cube rooms, drawing, chat, and random chill nonsense</div>
@@ -77,8 +81,8 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
       <div class="row"><input id="code" maxlength="8" placeholder="ROOM CODE"><button id="join">Join Online Room</button></div>
       <button id="local">Create Local Two-Tab Room</button>
     </div>
-    <div id="status">Ready — v2.2 mobile joystick build loaded.</div>
-    <div id="version">DaDerpGame v2.2 • mobile joystick + adaptive scaling</div>
+    <div id="status">Ready — DaDerpGame v3 Game Hub loaded.</div>
+    <div id="version">DaDerpGame v3 • Game Hub</div><button id="backToHub" style="margin-top:12px;width:100%">Back to Game Hub</button>
   </div>
 </section>
 
@@ -111,6 +115,8 @@ button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
+const hub=$("hub"),modePreview=$("modePreview");function showHub(){hub.classList.remove("hidden");$("lobby").classList.add("hidden");$("game").classList.add("hidden")}function showOgLobby(){hub.classList.add("hidden");$("lobby").classList.remove("hidden")}$("playOgBtn").onclick=showOgLobby;$("hubJoinBtn").onclick=showOgLobby;$("hubProfileBtn").onclick=()=>{const n=localStorage.ddg_name||"Derp",c=localStorage.ddg_color||"#46d7ff";$("previewTitle").textContent="Your Profile";$("previewText").innerHTML=`Name: <b>${n.replace(/[<>]/g,"")}</b><br>Cube color: <span style="display:inline-block;width:16px;height:16px;background:${c};border:1px solid white;vertical-align:middle;border-radius:4px"></span><br><br>Edit these when you open OG Derp.`;modePreview.classList.add("show")};$("backToHub").onclick=showHub;$("closePreview").onclick=()=>modePreview.classList.remove("show");const previews={evil:["Survive the Evil Boi","One random player becomes the Evil Boi and hunts everyone else. Survivors win if anyone remains when time runs out."],create:["Create Mode","A simple visual game maker with spawn zones, drawing boards, squares, walls, hazards, goals, buttons, teleporters, and shareable links."],platform:["Platformer Chaos","A side-view platformer with shared building, checkpoints, hazards, and per-player build hiding so unwanted builds vanish and lose collision only for you."]};document.querySelectorAll("[data-preview]").forEach(b=>b.onclick=()=>{const[t,d]=previews[b.dataset.preview];$("previewTitle").textContent=t;$("previewText").textContent=d;modePreview.classList.add("show")});
+
 const SUPABASE_URL="https://hjezefwwradgurpbkcfr.supabase.co";
 const SUPABASE_KEY="sb_publishable_Q7XxTFNOO0OTzpgodFmtjQ_4ga7p0MU";
 const ROOM_PREFIX="daderpgame-v2";
@@ -188,7 +194,7 @@ $("create").onclick=()=>joinRoom(makeCode(),false,true);
 $("join").onclick=()=>{const c=cleanCode($("code").value);if(c.length<4)return setStatus("Enter a valid room code.",true);joinRoom(c,false,false)};
 $("local").onclick=()=>joinRoom(makeCode(),true,true);
 $("copy").onclick=async()=>{await navigator.clipboard?.writeText(room).catch(()=>{});toast("Code copied")};
-$("leave").onclick=async()=>{await send("leave",{id:me.id}).catch(()=>{});if(channel&&supa)await supa.removeChannel(channel).catch(()=>{});bc?.close();location.reload()};
+$("leave").onclick=async()=>{await send("leave",{id:me.id}).catch(()=>{});if(channel&&supa)await supa.removeChannel(channel).catch(()=>{});bc?.close();connected=false;channel=null;bc=null;players.clear();strokes.length=0;$("conn").textContent="offline";$("conn").className="pill offline";showHub()};
 
 function renderPlayers(){
  const box=$("playerList");box.innerHTML="";
