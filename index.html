@@ -1,311 +1,192 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
-<title>DaDerpGame v3 Game Hub</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09101d;color:#eef7ff;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;touch-action:none}
-button,input{font:inherit}button{cursor:pointer}
-.hidden{display:none!important}
-#lobby{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 20% 10%,#193a5a 0,transparent 35%),radial-gradient(circle at 80% 90%,#42224b 0,transparent 35%),#09101d;padding:18px}
-.card{width:min(650px,100%);background:rgba(11,18,34,.95);border:1px solid #355174;border-radius:24px;padding:24px;box-shadow:0 24px 80px #0009}
-h1{font-size:clamp(38px,8vw,72px);margin:0;letter-spacing:-3px}.sub{color:#9db0c8;margin:8px 0 22px}
-.grid{display:grid;grid-template-columns:1fr 130px;gap:12px}.field{display:grid;gap:6px;color:#aabbd0;font-size:14px}
-input{width:100%;border:1px solid #304766;background:#0c1728;color:#fff;border-radius:12px;padding:12px}
-input[type=color]{height:45px;padding:3px}
-.actions{display:grid;gap:10px;margin-top:16px}.row{display:flex;gap:10px}.row>*{flex:1}
-button{border:1px solid #36506f;background:#182941;color:#fff;border-radius:12px;padding:11px 14px}
-button:hover{background:#223856}.primary{background:linear-gradient(135deg,#1478b6,#25bed2);font-weight:800}.danger{background:#522230;border-color:#8c3a50}
-#status{margin-top:14px;background:#0d1727;border:1px solid #243b57;border-radius:12px;padding:11px;min-height:42px;color:#b9eaff}
-#game{position:fixed;inset:0;background:#0a1120;overflow:hidden}
-#world{display:block;width:100%;height:100%;touch-action:none}
-#topbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:8px;align-items:center;pointer-events:none}
-#topbar>*{pointer-events:auto}.pill{background:#0d1728dd;border:1px solid #2f4565;border-radius:12px;padding:9px 11px}.online{color:#8effa7}.offline{color:#ff9eaa}
-#topbar .spacer{flex:1}
-.panel{position:absolute;background:#0d1728e8;border:1px solid #2c4260;border-radius:16px;padding:12px;backdrop-filter:blur(8px);box-shadow:0 14px 50px #0007}
-#players{left:10px;top:63px;width:200px;max-height:40vh;overflow:auto}
-#players h3,#chat h3{margin:0 0 8px;font-size:15px}
-.player{display:flex;align-items:center;gap:8px;background:#132137;border-radius:10px;padding:8px;margin-bottom:6px}.dot{width:16px;height:16px;border-radius:4px;border:1px solid #fff6}.host{margin-left:auto;font-size:10px;color:#ffd878}
-#chat{right:10px;top:63px;width:320px;height:390px;display:flex;flex-direction:column}
-#messages{flex:1;overflow:auto;background:#091322;border-radius:10px;padding:8px;margin-bottom:8px}
-.msg{margin-bottom:8px;line-height:1.3;word-break:break-word}.msg b{color:#80dcff}.system{color:#9baec7;font-style:italic}
-#chatControls{display:flex;gap:6px}#chatInput{flex:1;padding:9px}#sendBtn{padding:9px 12px}
-#quick{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}#quick button{padding:6px 8px;font-size:11px}
-#tools{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:7px;background:#0d1728e8;border:1px solid #2d4463;border-radius:16px;padding:8px}
-#tools button{padding:8px 10px;font-size:12px}#brushColor{width:42px;padding:2px}
-#joystick{display:none;position:fixed;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));width:clamp(108px,24vw,150px);height:clamp(108px,24vw,150px);border-radius:50%;background:#14233bcc;border:2px solid #ffffff55;touch-action:none;z-index:40;user-select:none;-webkit-user-select:none}
-#stick{position:absolute;width:42%;height:42%;left:29%;top:29%;border-radius:50%;background:#48d8ffee;border:2px solid #fff;pointer-events:none;box-shadow:0 0 22px #48d8ff66}
-#mobileButtons{display:none;position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));gap:12px;z-index:40}
-#mobileButtons button{width:76px;height:76px;border-radius:50%;font-weight:900}
-#cameraMode{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border:1px dashed #ffffff22;border-radius:12px;pointer-events:none}
-#toast{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);background:#07111fee;border:1px solid #31506f;border-radius:999px;padding:10px 15px;opacity:0;transition:.2s;pointer-events:none}#toast.show{opacity:1}
-#version{font-size:12px;color:#7f95ad;margin-top:10px}
-@media(max-width:800px), (pointer:coarse){
- #players{display:none}
- #chat{top:auto;bottom:calc(clamp(108px,24vw,150px) + 34px);right:8px;width:min(330px,calc(100% - 16px));height:min(235px,34vh)}
- #tools{bottom:8px;left:8px;right:8px;transform:none;justify-content:center;z-index:30}
- #tools button:nth-of-type(n+4),#brushColor{display:none}
- #joystick,#mobileButtons{display:flex}
- #toast{bottom:calc(clamp(108px,24vw,150px) + 40px)}
-}
-@media(max-width:520px){
- .grid{grid-template-columns:1fr}.row{flex-direction:column}.card{padding:18px}
- #chat{height:min(210px,30vh)}
- #topbar{transform:scale(.92);transform-origin:top left;right:-8%}
-}
-@media(max-height:560px) and (orientation:landscape){
- #chat{height:180px;bottom:10px;right:10px;width:280px}
- #tools{display:none}
- #joystick{width:108px;height:108px}
- #mobileButtons button{width:64px;height:64px}
-}
-
-#hub{position:fixed;inset:0;overflow:auto;background:radial-gradient(circle at 18% 15%,rgba(70,215,255,.18),transparent 30%),radial-gradient(circle at 82% 80%,rgba(255,79,195,.16),transparent 34%),linear-gradient(145deg,#08101d,#111a2e);padding:24px}
-.hub-shell{width:min(1180px,100%);margin:0 auto}.hub-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:24px}.hub-logo{width:74px;height:74px;border-radius:18px;background:linear-gradient(145deg,#46d7ff,#176da0);box-shadow:inset -12px -12px 0 #0003,0 0 30px #46d7ff33}.hub-title h1{margin:0;font-size:clamp(38px,7vw,72px);letter-spacing:-3px}.hub-title p{margin:6px 0 0;color:#9db0c8}.hub-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}.game-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.game-card{position:relative;min-height:250px;border:1px solid #355174;border-radius:22px;padding:20px;overflow:hidden;background:#0f1a2ddd;box-shadow:0 18px 60px #0006}.game-card::after{content:"";position:absolute;inset:auto -40px -50px auto;width:180px;height:180px;border-radius:50%;background:var(--glow,#46d7ff);opacity:.12;filter:blur(8px)}.game-card h2{font-size:30px;margin:0 0 8px}.game-card p{color:#adc0d8;max-width:620px;line-height:1.45}.game-card .tag{display:inline-block;border:1px solid #ffffff2a;border-radius:999px;padding:5px 9px;font-size:11px;color:#d9e8f8;margin-bottom:13px}.game-card .card-actions{position:absolute;left:20px;right:20px;bottom:18px;display:flex;gap:8px;z-index:2}.game-card .card-actions button{flex:1}.game-card.og{--glow:#46d7ff}.game-card.evil{--glow:#ff5c73}.game-card.create{--glow:#ffcc61}.game-card.platform{--glow:#9c77ff}.coming{opacity:.88}.promise{margin-top:20px;border:1px solid #2b4666;background:#0d1727d9;border-radius:16px;padding:15px;color:#bdeaff;text-align:center;font-weight:700}#modePreview{position:fixed;inset:0;background:#050a12dd;display:none;place-items:center;padding:18px;z-index:100}#modePreview.show{display:grid}.preview-card{width:min(560px,100%);background:#0d1728;border:1px solid #36516f;border-radius:20px;padding:22px;box-shadow:0 24px 80px #000b}.preview-card h2{margin-top:0}.preview-card p{color:#adc0d8;line-height:1.5}.preview-actions{display:flex;gap:8px;margin-top:18px}.preview-actions button{flex:1}@media(max-width:760px){#hub{padding:14px}.game-grid{grid-template-columns:1fr}.hub-actions{margin-left:0;width:100%}.hub-actions button{flex:1}.game-card{min-height:270px}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08101d">
+  <title>DaDerpGame v4</title>
+  <link rel="stylesheet" href="style.css?v=4.0.0">
 </head>
 <body>
-<section id="hub"><div class="hub-shell"><div class="hub-top"><div class="hub-logo"></div><div class="hub-title"><h1>DaDerpGame</h1><p>tiny 2D games for friends • no purchases with real money, ever</p></div><div class="hub-actions"><button id="hubProfileBtn">Profile</button><button id="hubJoinBtn">Join Room</button></div></div><div class="game-grid"><article class="game-card og"><span class="tag">PLAYABLE NOW</span><h2>OG Derp</h2><p>The original chill room: move around, chat, draw, change your cube color, and mess with your friends in private codes.</p><div class="card-actions"><button id="playOgBtn" class="primary">Play OG Derp</button></div></article><article class="game-card evil coming"><span class="tag">NEXT GAME</span><h2>Survive the Evil Boi</h2><p>One player becomes the Evil Boi. Everyone else must run, hide, and survive until the timer reaches zero.</p><div class="card-actions"><button data-preview="evil">View Plan</button></div></article><article class="game-card create coming"><span class="tag">PLANNED</span><h2>Create Mode</h2><p>Build tiny games with spawn areas, drawing boards, resizable squares, hazards, goals, and shareable links.</p><div class="card-actions"><button data-preview="create">View Plan</button></div></article><article class="game-card platform coming"><span class="tag">PLANNED</span><h2>Platformer Chaos</h2><p>A side-view platformer with building. Hide another player's builds for yourself and their collision turns off only for you.</p><div class="card-actions"><button data-preview="platform">View Plan</button></div></article></div><div class="promise">No microtransactions. No pay-to-win. Just derps.</div></div></section><div id="modePreview"><div class="preview-card"><h2 id="previewTitle">Mode</h2><p id="previewText"></p><div class="preview-actions"><button id="closePreview">Back to Hub</button></div></div></div>
-<section id="lobby" class="hidden">
-  <div class="card">
-    <h1>DaDerpGame</h1>
-    <div class="sub">private cube rooms, drawing, chat, and random chill nonsense</div>
-    <div class="grid">
-      <label class="field">Display name<input id="name" maxlength="18" placeholder="Derp"></label>
-      <label class="field">Cube color<input id="color" type="color" value="#46d7ff"></label>
-    </div>
-    <div class="actions">
-      <button id="create" class="primary">Create Online Room</button>
-      <div class="row"><input id="code" maxlength="8" placeholder="ROOM CODE"><button id="join">Join Online Room</button></div>
-      <button id="local">Create Local Two-Tab Room</button>
-    </div>
-    <div id="status">Ready — DaDerpGame v3 Game Hub loaded.</div>
-    <div id="version">DaDerpGame v3 • Game Hub</div><button id="backToHub" style="margin-top:12px;width:100%">Back to Game Hub</button>
-  </div>
-</section>
+  <main id="app">
+    <section id="hubScreen" class="screen active">
+      <header class="hub-header">
+        <div class="brand-cube" aria-hidden="true"></div>
+        <div>
+          <h1>DaDerpGame</h1>
+          <p>tiny 2D games for friends</p>
+        </div>
+        <div class="header-actions">
+          <button id="profileBtn">Customize Cube</button>
+          <button id="friendsBtn">Friends</button>
+        </div>
+      </header>
 
-<section id="game" class="hidden">
-  <canvas id="world" tabindex="0"></canvas>
-  <div id="topbar">
-    <div class="pill">ROOM <b id="roomLabel">------</b></div>
-    <div id="conn" class="pill offline">offline</div>
-    <button id="copy">Copy Code</button><div class="spacer"></div><button id="leave" class="danger">Leave</button>
-  </div>
-  <aside id="players" class="panel"><h3>Players</h3><div id="playerList"></div></aside>
-  <aside id="chat" class="panel">
-    <h3>Room Chat</h3><div id="messages"></div>
-    <div id="chatControls"><input id="chatInput" maxlength="160" placeholder="say something..."><button id="sendBtn">Send</button></div>
-    <div id="quick">
-      <button data-q="hello!">hello!</button><button data-q="LOL">LOL</button><button data-q="follow me">follow me</button>
-      <button data-q="bruh">bruh</button><button data-q="kitteh of agreement">kitteh</button>
-    </div>
-  </aside>
-  <div id="tools">
-    <button id="drawBtn">Draw: OFF</button><input id="brushColor" type="color" value="#ff4fc3">
-    <button id="undo">Undo Mine</button><button id="clear">Clear All</button><button id="spawn">Spawn</button>
-  </div>
-  <div id="joystick"><div id="stick"></div></div>
-  <div id="mobileButtons"><button id="mobileDraw">DRAW</button><button id="use">USE</button></div>
-  <div id="cameraMode" title="Your cube stays centered while the world moves"></div>
-<div id="toast"></div>
-</section>
+      <div class="game-grid">
+        <article class="game-card cyan">
+          <span class="badge playable">PLAYABLE</span>
+          <h2>OG Derp</h2>
+          <p>Draw, chat, explore, kick balls, and chill in private rooms.</p>
+          <button class="primary" data-open-mode="og">Play OG Derp</button>
+        </article>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-"use strict";
-const hub=$("hub"),modePreview=$("modePreview");function showHub(){hub.classList.remove("hidden");$("lobby").classList.add("hidden");$("game").classList.add("hidden")}function showOgLobby(){hub.classList.add("hidden");$("lobby").classList.remove("hidden")}$("playOgBtn").onclick=showOgLobby;$("hubJoinBtn").onclick=showOgLobby;$("hubProfileBtn").onclick=()=>{const n=localStorage.ddg_name||"Derp",c=localStorage.ddg_color||"#46d7ff";$("previewTitle").textContent="Your Profile";$("previewText").innerHTML=`Name: <b>${n.replace(/[<>]/g,"")}</b><br>Cube color: <span style="display:inline-block;width:16px;height:16px;background:${c};border:1px solid white;vertical-align:middle;border-radius:4px"></span><br><br>Edit these when you open OG Derp.`;modePreview.classList.add("show")};$("backToHub").onclick=showHub;$("closePreview").onclick=()=>modePreview.classList.remove("show");const previews={evil:["Survive the Evil Boi","One random player becomes the Evil Boi and hunts everyone else. Survivors win if anyone remains when time runs out."],create:["Create Mode","A simple visual game maker with spawn zones, drawing boards, squares, walls, hazards, goals, buttons, teleporters, and shareable links."],platform:["Platformer Chaos","A side-view platformer with shared building, checkpoints, hazards, and per-player build hiding so unwanted builds vanish and lose collision only for you."]};document.querySelectorAll("[data-preview]").forEach(b=>b.onclick=()=>{const[t,d]=previews[b.dataset.preview];$("previewTitle").textContent=t;$("previewText").textContent=d;modePreview.classList.add("show")});
+        <article class="game-card red">
+          <span class="badge prototype">PROTOTYPE</span>
+          <h2>Survive the Evil Boi</h2>
+          <p>One player hunts. Everyone else runs until the timer ends.</p>
+          <button data-open-mode="evil">Open Prototype</button>
+        </article>
 
-const SUPABASE_URL="https://hjezefwwradgurpbkcfr.supabase.co";
-const SUPABASE_KEY="sb_publishable_Q7XxTFNOO0OTzpgodFmtjQ_4ga7p0MU";
-const ROOM_PREFIX="daderpgame-v2";
-const $=id=>document.getElementById(id);
-const canvas=$("world"),ctx=canvas.getContext("2d");
-const WORLD={w:2400,h:1600},SPAWN={x:420,y:420},DRAW={x:1050,y:180,w:1050,h:900};
-const uid=crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);
-let supa=null,channel=null,bc=null,localMode=false,room="",isHost=false,hostId=null,connected=false;
-let drawMode=false,drawing=false,lastPoint=null,lastMoveSend=0,lastDrawSend=0,lastFrame=performance.now(),toastTimer;
-const keys=new Set(),players=new Map(),targets=new Map(),strokes=[],mine=[],chatLog=[];
-const joy={x:0,y:0,active:false};
-const me={id:uid,name:localStorage.ddg_name||"Derp",color:localStorage.ddg_color||"#46d7ff",x:SPAWN.x,y:SPAWN.y,size:38,msg:"",msgUntil:0};
-$("name").value=me.name;$("color").value=me.color;
+        <article class="game-card gold">
+          <span class="badge planned">EDITOR</span>
+          <h2>Create Mode</h2>
+          <p>Place simple squares, spawn zones, hazards, goals, and drawing boards.</p>
+          <button data-open-mode="create">Open Create Mode</button>
+        </article>
 
-function setStatus(t,bad=false){$("status").textContent=t;$("status").style.color=bad?"#ff9eaa":"#b9eaff"}
-function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.remove("show"),1800)}
-function cleanCode(s){return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)}
-function makeCode(){const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
-function getViewSize(){
- const vv=window.visualViewport;
- return {w:Math.round(vv?.width||innerWidth),h:Math.round(vv?.height||innerHeight)};
-}
-function resize(){
- const {w,h}=getViewSize();
- const d=Math.min(devicePixelRatio||1,2);
- canvas.width=Math.floor(w*d);canvas.height=Math.floor(h*d);
- canvas.style.width=w+"px";canvas.style.height=h+"px";
- ctx.setTransform(d,0,0,d,0,0);
-}
-addEventListener("resize",resize);
-window.visualViewport?.addEventListener("resize",resize);
-window.visualViewport?.addEventListener("scroll",resize);
-resize();
+        <article class="game-card purple">
+          <span class="badge prototype">PROTOTYPE</span>
+          <h2>Platformer Chaos</h2>
+          <p>Jump, build blocks, and hide another player's builds just for yourself.</p>
+          <button data-open-mode="platform">Open Prototype</button>
+        </article>
+      </div>
 
-async function send(type,data={}){
- const payload={type,senderId:me.id,sentAt:Date.now(),...data};
- if(localMode){bc?.postMessage(payload);receive(payload);return}
- if(channel) await channel.send({type:"broadcast",event:"game",payload});
-}
-function receive(p){
- if(!p||!p.type)return;
- if(p.type==="hello"){p.player.name=cleanName(p.player.name);players.set(p.player.id,{...p.player,size:38});if(p.host)hostId=p.player.id;renderPlayers();addSystem(p.player.name+" joined")}
- if(p.type==="move"&&p.id!==me.id){if(!players.has(p.id))players.set(p.id,{id:p.id,name:"Cube",color:"#fff",x:p.x,y:p.y,size:38});targets.set(p.id,{x:p.x,y:p.y})}
- if(p.type==="color"){const q=players.get(p.id);if(q)q.color=p.color;renderPlayers()}
- if(p.type==="chat"){p.name=cleanName(p.name);p.text=censorText(p.text);addChat(p.name,p.text,p.color);const q=players.get(p.senderId);if(q){q.msg=p.text;q.msgUntil=Date.now()+4000}}
- if(p.type==="draw"&&p.senderId!==me.id){strokes.push(p);if(strokes.length>3000)strokes.shift()}
- if(p.type==="undo"){for(let i=strokes.length-1;i>=0;i--)if(strokes[i].id===p.strokeId){strokes.splice(i,1);break}}
- if(p.type==="clear"){strokes.length=0;mine.length=0}
- if(p.type==="request_snapshot"&&isHost&&p.senderId!==me.id)send("snapshot",{target:p.senderId,strokes:strokes.slice(-1800),players:[...players.values()]})
- if(p.type==="snapshot"&&p.target===me.id){strokes.length=0;strokes.push(...(p.strokes||[]));for(const q of p.players||[])players.set(q.id,{...q,size:38});renderPlayers()}
- if(p.type==="leave"){const q=players.get(p.id);if(q)addSystem(q.name+" left");players.delete(p.id);renderPlayers()}
-}
-async function joinRoom(code,useLocal,host){
- me.name=cleanName($("name").value);me.color=$("color").value;
- localStorage.ddg_name=me.name;localStorage.ddg_color=me.color;
- room=code;localMode=useLocal;isHost=host;hostId=host?me.id:null;
- $("roomLabel").textContent=room;setStatus("Connecting...");
- try{
-  if(localMode){
-   bc=new BroadcastChannel(ROOM_PREFIX+":"+room);bc.onmessage=e=>receive(e.data);connected=true;
-  }else{
-   if(!window.supabase)throw new Error("Supabase library did not load.");
-   supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-   channel=supa.channel(ROOM_PREFIX+":"+room,{config:{presence:{key:me.id},broadcast:{self:true}}});
-   channel.on("broadcast",{event:"game"},({payload})=>receive(payload));
-   await new Promise((res,rej)=>{let t=setTimeout(()=>rej(new Error("Realtime connection timed out.")),12000);channel.subscribe(async s=>{if(s==="SUBSCRIBED"){clearTimeout(t);connected=true;await channel.track({id:me.id,name:me.name,color:me.color,host:isHost});res()}else if(s==="CHANNEL_ERROR"||s==="TIMED_OUT"){clearTimeout(t);rej(new Error("Realtime failed: "+s))}})});
-  }
-  players.clear();players.set(me.id,me);$("lobby").classList.add("hidden");$("game").classList.remove("hidden");
-  $("conn").textContent="online";$("conn").className="pill online";
-  send("hello",{player:{id:me.id,name:me.name,color:me.color,x:me.x,y:me.y},host:isHost});send("request_snapshot",{});
-  renderPlayers();addSystem("Joined room "+room);canvas.focus();toast("Movement ready: WASD / arrows / joystick");
- }catch(e){console.error(e);setStatus(e.message||"Could not connect.",true)}
-}
-$("create").onclick=()=>joinRoom(makeCode(),false,true);
-$("join").onclick=()=>{const c=cleanCode($("code").value);if(c.length<4)return setStatus("Enter a valid room code.",true);joinRoom(c,false,false)};
-$("local").onclick=()=>joinRoom(makeCode(),true,true);
-$("copy").onclick=async()=>{await navigator.clipboard?.writeText(room).catch(()=>{});toast("Code copied")};
-$("leave").onclick=async()=>{await send("leave",{id:me.id}).catch(()=>{});if(channel&&supa)await supa.removeChannel(channel).catch(()=>{});bc?.close();connected=false;channel=null;bc=null;players.clear();strokes.length=0;$("conn").textContent="offline";$("conn").className="pill offline";showHub()};
+      <div class="promise">No microtransactions. No pay-to-win. Just derps.</div>
+      <div class="version">DaDerpGame v4.0</div>
+    </section>
 
-function renderPlayers(){
- const box=$("playerList");box.innerHTML="";
- for(const p of players.values()){const d=document.createElement("div");d.className="player";d.innerHTML='<span class="dot"></span><span></span>';d.querySelector(".dot").style.background=p.color;d.querySelectorAll("span")[1].textContent=p.name;if(p.id===hostId||p.id===me.id&&isHost){const h=document.createElement("span");h.className="host";h.textContent="HOST";d.append(h)}box.append(d)}
-}
+    <section id="roomScreen" class="screen">
+      <div class="room-card">
+        <button class="back-btn" data-back-hub>← Back</button>
+        <h2 id="roomModeTitle">OG Derp</h2>
+        <p id="roomModeDescription"></p>
 
-const BLOCKED_WORDS=[
-  "fuck","fucker","fucking","shit","bitch","bastard","asshole",
-  "nigger","nigga","faggot","retard","cunt","kys"
-];
-function censorText(value){
-  let out=String(value||"");
-  for(const word of BLOCKED_WORDS){
-    const escaped=word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-    out=out.replace(new RegExp("\\b"+escaped+"\\b","gi"),m=>"*".repeat(Math.max(3,m.length)));
-  }
-  return out;
-}
-function cleanName(value){
-  return censorText(String(value||"Derp").replace(/[<>]/g,"").trim()).slice(0,18)||"Derp";
-}
-function addChat(name,text,color){chatLog.push({name,text,color});if(chatLog.length>80)chatLog.shift();const d=document.createElement("div");d.className="msg";const b=document.createElement("b");b.textContent=name+": ";b.style.color=color||"#80dcff";d.append(b,document.createTextNode(text));$("messages").append(d);$("messages").scrollTop=1e9}
-function addSystem(text){const d=document.createElement("div");d.className="msg system";d.textContent=text;$("messages").append(d);$("messages").scrollTop=1e9}
-function sendChat(text){text=censorText(String(text||"").trim()).slice(0,160);if(!text)return;send("chat",{name:me.name,text,color:me.color});$("chatInput").value=""}
-$("sendBtn").onclick=()=>sendChat($("chatInput").value);
-$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.stopPropagation();sendChat(e.target.value)}});
-document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>sendChat(b.dataset.q));
+        <div class="profile-preview">
+          <canvas id="profilePreview" width="110" height="110"></canvas>
+          <div>
+            <b id="profilePreviewName">Derp</b>
+            <small>Your cube appearance is used in every mode.</small>
+          </div>
+        </div>
 
-addEventListener("keydown",e=>{if(document.activeElement===$("chatInput"))return;const k=e.key.toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){keys.add(k);e.preventDefault()}if(k==="e")interact()});
-addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
-addEventListener("blur",()=>keys.clear());
+        <label>Display name<input id="displayNameInput" maxlength="18" autocomplete="off"></label>
+        <div class="room-actions">
+          <button id="createOnlineBtn" class="primary">Create Online Room</button>
+          <div class="join-row">
+            <input id="roomCodeInput" maxlength="8" placeholder="ROOM CODE" autocomplete="off">
+            <button id="joinOnlineBtn">Join</button>
+          </div>
+          <button id="createLocalBtn">Local Two-Tab Test</button>
+        </div>
+        <div id="roomStatus" class="status">Ready.</div>
+      </div>
+    </section>
 
-function setupJoystick(){
- const base=$("joystick"),stick=$("stick");
- let activeId=null;
- function apply(clientX,clientY){
-   const r=base.getBoundingClientRect();
-   let x=clientX-r.left-r.width/2;
-   let y=clientY-r.top-r.height/2;
-   const max=r.width*0.29;
-   const len=Math.hypot(x,y)||1;
-   if(len>max){x=x/len*max;y=y/len*max}
-   joy.x=x/max;joy.y=y/max;joy.active=true;
-   stick.style.transform=`translate(${x}px,${y}px)`;
- }
- function reset(){
-   activeId=null;joy.x=0;joy.y=0;joy.active=false;
-   stick.style.transform="translate(0px,0px)";
- }
- base.addEventListener("pointerdown",e=>{
-   e.preventDefault();activeId=e.pointerId;
-   base.setPointerCapture?.(activeId);apply(e.clientX,e.clientY);
- });
- base.addEventListener("pointermove",e=>{
-   if(e.pointerId!==activeId)return;
-   e.preventDefault();apply(e.clientX,e.clientY);
- });
- base.addEventListener("pointerup",e=>{if(e.pointerId===activeId)reset()});
- base.addEventListener("pointercancel",reset);
- base.addEventListener("lostpointercapture",reset);
- base.addEventListener("touchstart",e=>{
-   e.preventDefault();const t=e.changedTouches[0];activeId="touch";apply(t.clientX,t.clientY);
- },{passive:false});
- base.addEventListener("touchmove",e=>{
-   if(activeId!=="touch")return;
-   e.preventDefault();const t=e.changedTouches[0];apply(t.clientX,t.clientY);
- },{passive:false});
- base.addEventListener("touchend",e=>{e.preventDefault();reset()},{passive:false});
- base.addEventListener("touchcancel",reset,{passive:false});
- document.addEventListener("visibilitychange",()=>{if(document.hidden)reset()});
- window.addEventListener("blur",reset);
-}
-setupJoystick();
+    <section id="gameScreen" class="screen">
+      <canvas id="gameCanvas" tabindex="0"></canvas>
 
-$("drawBtn").onclick=toggleDraw;$("mobileDraw").onclick=toggleDraw;
-function toggleDraw(){drawMode=!drawMode;$("drawBtn").textContent="Draw: "+(drawMode?"ON":"OFF");$("mobileDraw").textContent=drawMode?"MOVE":"DRAW";toast(drawMode?"Draw inside pink zone":"Movement enabled")}
-$("spawn").onclick=()=>{me.x=SPAWN.x;me.y=SPAWN.y};
-$("undo").onclick=()=>{const id=mine.pop();if(!id)return toast("Nothing to undo");for(let i=strokes.length-1;i>=0;i--)if(strokes[i].id===id){strokes.splice(i,1);break}send("undo",{strokeId:id})};
-$("clear").onclick=()=>{if(!isHost)return toast("Host only");strokes.length=0;mine.length=0;send("clear",{})};
-$("use").onclick=interact;
-function interact(){me.color="#"+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,"0");send("color",{id:me.id,color:me.color});toast("Randomized cube color")}
+      <header id="gameTopbar">
+        <button id="gameHubBtn">Hub</button>
+        <div class="pill">MODE <b id="modeLabel">OG DERP</b></div>
+        <div class="pill">ROOM <b id="roomLabel">------</b></div>
+        <div id="connectionLabel" class="pill offline">offline</div>
+        <button id="copyRoomBtn">Copy</button>
+      </header>
 
-canvas.addEventListener("pointerdown",e=>{if(!drawMode)return;const p=screenToWorld(e.clientX,e.clientY);if(!inside(p,DRAW))return toast("Draw in the pink zone");drawing=true;lastPoint=p});
-canvas.addEventListener("pointermove",e=>{if(!drawing||!drawMode)return;const now=performance.now();if(now-lastDrawSend<25)return;const p=screenToWorld(e.clientX,e.clientY);if(!inside(p,DRAW)||!lastPoint)return;const s={id:me.id+"-"+Date.now()+"-"+Math.random(),owner:me.id,x1:lastPoint.x,y1:lastPoint.y,x2:p.x,y2:p.y,color:$("brushColor").value,size:7};strokes.push(s);mine.push(s.id);send("draw",s);lastPoint=p;lastDrawSend=now});
-addEventListener("pointerup",()=>{drawing=false;lastPoint=null});
+      <aside id="playersPanel" class="floating-panel">
+        <h3>Players</h3>
+        <div id="playersList"></div>
+      </aside>
 
-const cam={x:0,y:0};
-function update(dt){
- let x=0,y=0;if(!drawMode){if(keys.has("a")||keys.has("arrowleft"))x--;if(keys.has("d")||keys.has("arrowright"))x++;if(keys.has("w")||keys.has("arrowup"))y--;if(keys.has("s")||keys.has("arrowdown"))y++;x+=joy.x;y+=joy.y}
- const l=Math.hypot(x,y);if(l>0){x/=l;y/=l}const speed=300;me.x=clamp(me.x+x*speed*dt,20,WORLD.w-20);me.y=clamp(me.y+y*speed*dt,20,WORLD.h-20);
- const now=performance.now();if(now-lastMoveSend>55){send("move",{id:me.id,x:me.x,y:me.y});lastMoveSend=now}
- for(const [id,t] of targets){const p=players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}
- const view=getViewSize();
- const maxCamX=Math.max(0,WORLD.w-view.w),maxCamY=Math.max(0,WORLD.h-view.h);
- const tx=clamp(me.x-view.w/2,0,maxCamX),ty=clamp(me.y-view.h/2,0,maxCamY);
- cam.x=tx;cam.y=ty
-}
-function draw(){
- const view=getViewSize();ctx.clearRect(0,0,view.w,view.h);ctx.save();ctx.translate(-cam.x,-cam.y);
- ctx.fillStyle="#17263d";ctx.fillRect(0,0,WORLD.w,WORLD.h);
- ctx.strokeStyle="#ffffff0d";ctx.lineWidth=1;for(let x=0;x<WORLD.w;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD.h);ctx.stroke()}for(let y=0;y<WORLD.h;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD.w,y);ctx.stroke()}
- ctx.fillStyle="#251a38";ctx.fillRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.strokeStyle="#ff4fc3";ctx.lineWidth=5;ctx.setLineDash([18,12]);ctx.strokeRect(DRAW.x,DRAW.y,DRAW.w,DRAW.h);ctx.setLineDash([]);ctx.fillStyle="#ffc9ef";ctx.font="bold 24px Arial";ctx.fillText("DRAWING ZONE",DRAW.x+24,DRAW.y+40);
- ctx.fillStyle="#203650";ctx.fillRect(220,220,620,420);ctx.fillStyle="#162e2e";ctx.fillRect(190,760,730,430);
- for(const s of strokes){ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.strokeStyle=s.color;ctx.lineWidth=s.size;ctx.lineCap="round";ctx.stroke()}
- for(const p of players.values())if(p.id!==me.id)drawPlayer(p);
- drawPlayer(me);
- ctx.strokeStyle="#526681";ctx.lineWidth=8;ctx.strokeRect(0,0,WORLD.w,WORLD.h);ctx.restore()
-}
-function drawPlayer(p){const s=p.size||38;ctx.fillStyle=p.color||"#fff";ctx.fillRect(p.x-s/2,p.y-s/2,s,s);ctx.strokeStyle="#0009";ctx.lineWidth=4;ctx.strokeRect(p.x-s/2,p.y-s/2,s,s);ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.fillText(p.name||"Cube",p.x,p.y-s/2-10);if(p.msg&&p.msgUntil>Date.now()){const w=Math.max(80,ctx.measureText(p.msg).width+20);ctx.fillStyle="#08111eee";ctx.fillRect(p.x-w/2,p.y-s/2-55,w,28);ctx.fillStyle="#fff";ctx.fillText(p.msg,p.x,p.y-s/2-36)}ctx.textAlign="left"}
-function loop(t){const dt=Math.min(.04,(t-lastFrame)/1000);lastFrame=t;if(!$("game").classList.contains("hidden"))update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-function screenToWorld(x,y){return{x:x+cam.x,y:y+cam.y}}function inside(p,r){return p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h}function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
-</script>
+      <aside id="chatPanel" class="floating-panel">
+        <h3>Chat</h3>
+        <div id="chatMessages"></div>
+        <div class="chat-row">
+          <input id="chatInput" maxlength="160" placeholder="say something...">
+          <button id="sendChatBtn">Send</button>
+        </div>
+        <div class="quick-chat">
+          <button data-quick="hello!">hello!</button>
+          <button data-quick="LOL">LOL</button>
+          <button data-quick="follow me">follow me</button>
+          <button data-quick="bruh">bruh</button>
+        </div>
+      </aside>
+
+      <aside id="toolPanel" class="floating-panel">
+        <button id="drawModeBtn">Draw: OFF</button>
+        <input id="brushColorInput" type="color" value="#ff4fc3">
+        <button id="undoDrawBtn">Undo</button>
+        <button id="clearDrawBtn">Clear</button>
+        <button id="interactBtn">Use</button>
+      </aside>
+
+      <div id="mobileJoystick"><div id="mobileStick"></div></div>
+      <div id="mobileButtons">
+        <button id="mobileDrawBtn">DRAW</button>
+        <button id="mobileUseBtn">USE</button>
+      </div>
+      <div id="toast"></div>
+    </section>
+
+    <dialog id="profileDialog">
+      <form method="dialog" class="dialog-card">
+        <h2>Customize Cube</h2>
+        <div class="customize-grid">
+          <canvas id="customizePreview" width="150" height="150"></canvas>
+          <div class="customize-fields">
+            <label>Cube color<input id="cubeColorInput" type="color"></label>
+            <label>Face
+              <select id="faceSelect">
+                <option value="none">None</option>
+                <option value="happy">Happy</option>
+                <option value="silly">Silly</option>
+                <option value="angry">Angry</option>
+                <option value="sleepy">Sleepy</option>
+                <option value="cool">Cool</option>
+              </select>
+            </label>
+            <label>Hat
+              <select id="hatSelect">
+                <option value="none">None</option>
+                <option value="cap">Derp Cap</option>
+                <option value="crown">Cardboard Crown</option>
+                <option value="cone">Traffic Cone</option>
+                <option value="cat">Cat Ears</option>
+                <option value="wizard">Wizard Hat</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button value="cancel">Cancel</button>
+          <button id="saveProfileBtn" value="default" class="primary">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="friendsDialog">
+      <form method="dialog" class="dialog-card">
+        <h2>Friends</h2>
+        <p class="muted">Your friend code stays on this browser. Add a friend's code, then use room codes to meet in a game.</p>
+        <div class="friend-code-box">
+          <span>Your code</span>
+          <b id="myFriendCode">------</b>
+          <button id="copyFriendCodeBtn" type="button">Copy</button>
+        </div>
+        <div class="join-row">
+          <input id="friendCodeInput" maxlength="10" placeholder="FRIEND CODE">
+          <button id="addFriendBtn" type="button">Add Friend</button>
+        </div>
+        <div id="friendsList"></div>
+        <div class="dialog-actions"><button value="close">Close</button></div>
+      </form>
+    </dialog>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=4.0.0"></script>
+  <script src="app.js?v=4.0.0"></script>
 </body>
 </html>
