@@ -2,7 +2,10 @@
 "use strict";
 const BLOCKED = [
   "fuck","shit","bitch","asshole","cunt","nigger","nigga","faggot","retard","kys",
-  "porn","sex","rape","rapist","nazi"
+  "porn","sex","rape","rapist","nazi",
+  "dick","dicc","dik","cock","penis","pussy","vagina","cunt","cum","jizz",
+  "boob","boobs","tits","whore","slut","bastard","motherfucker","pedo","pedophile",
+  "incest","hentai","nude","nudes","suckmy","blowjob","handjob"
 ];
 const SUBS = {"0":"o","1":"i","!":"i","3":"e","4":"a","@":"a","5":"s","$":"s","7":"t","+":"t","8":"b","9":"g"};
 const normalize = value => String(value||"")
@@ -25,9 +28,9 @@ function suspicious(token){
   const sk=skeleton(token);
   return BLOCKED.some(word=>{
     const w=normalize(word), wsk=skeleton(word);
-    if(n===w || n.includes(w) || (w.length>=4 && n.length>=4 && distance(n,w)<=1))return true;
+    if(n===w || n.includes(w) || (w.length>=3 && n.length>=3 && distance(n,w)<=1))return true;
     if(wsk.length>=3 && sk===wsk)return true;
-    if(w.length>=4 && n.length>=4 && Math.abs(n.length-w.length)<=1 && distance(n,w)<=2 && n[0]===w[0] && n.at(-1)===w.at(-1))return true;
+    if(w.length>=3 && n.length>=3 && Math.abs(n.length-w.length)<=1 && distance(n,w)<=2 && n[0]===w[0])return true;
     return false;
   });
 }

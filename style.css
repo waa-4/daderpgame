@@ -132,3 +132,13 @@ body:not(.game-running) #ddgToolHotbar{display:none!important}
 /* Avatar editor usability */
 #avatarDialog select option:disabled{color:#73849a}
 #avatarPreview{background:#091321;border-radius:14px}
+
+.lime{--accent:#d7ff46}
+#ddgToolHotbar{display:none!important}
+#modeExtraBtn{margin-top:7px;width:100%}
+.meat-hud{color:#ffe55f}
+.platform-hud{color:#7fe8ff}
+@media(max-width:800px),(pointer:coarse){
+  body.mobile-ui-open #roundPanel{display:block!important}
+  #modeExtraBtn{font-size:12px}
+}

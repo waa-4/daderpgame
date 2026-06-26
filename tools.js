@@ -110,10 +110,15 @@ function renderMenus(){
   for(const [id,key] of Object.entries({setParticles:"particles",setConfetti:"confetti",setBubbles:"bubbles",setNames:"showNames",setChatBubbles:"showChatBubbles",setLow:"lowPerformance"}))document.querySelector("#"+id).checked=!!set[key];
   document.querySelector("#setJoystick").value=set.joystickSize;
   const toolPanel=document.querySelector('[data-panel="tools"]');toolPanel.innerHTML="";
-  for(const t of toolDefs){const label=document.createElement("label");label.className="ddg-tool-toggle";label.innerHTML=`<span>${t.icon} <b>${t.name}</b><small>${t.desc}</small></span><input type="checkbox">`;const c=label.querySelector("input");c.checked=set.enabledTools.includes(t.id);c.onchange=()=>{set.enabledTools=c.checked?[...new Set([...set.enabledTools,t.id])]:set.enabledTools.filter(x=>x!==t.id);S.saveSettings();updateHotbar()};toolPanel.append(label)}
+  for(const t of toolDefs){
+    const label=document.createElement("div");label.className="ddg-tool-toggle";
+    label.innerHTML=`<span>${t.icon} <b>${t.name}</b><small>${t.desc}</small></span><button type="button">Use</button>`;
+    label.querySelector("button").onclick=()=>{useTool(t.id);document.querySelector("#ddgMenuDialog")?.close()};
+    toolPanel.append(label)
+  }
   renderPlayerControls();
 }
-function updateHotbar(){document.querySelectorAll("#ddgToolHotbar button").forEach(b=>b.hidden=!S.settings.enabledTools.includes(b.dataset.tool))}
+function updateHotbar(){}
 function renderPlayerControls(){
   const bridge=getBridge(),state=bridge?.getState?.(),me=bridge?.getMe?.();
   const playerBox=document.querySelector("#ddgPlayersMenu"),hostBox=document.querySelector("#ddgHostMenu");
@@ -135,7 +140,7 @@ function wireBridge(){
   const b=getBridge();
   if(!b)return setTimeout(wireBridge,100);
   b.net.on("tool_use",p=>{if(p.senderId!==b.getMe()?.id)useTool(p.tool,true)});
-  b.net.on("room_tools",p=>{window.DDG_ROOM_TOOLS_ENABLED=p.enabled;document.querySelector("#ddgToolHotbar").hidden=!p.enabled||!document.querySelector("#gameScreen")?.classList.contains("active");b.toast?.(p.enabled?"Room tools enabled":"Room tools disabled")});
+  b.net.on("room_tools",p=>{window.DDG_ROOM_TOOLS_ENABLED=p.enabled;/* hotbar removed in v6.5 */b.toast?.(p.enabled?"Room tools enabled":"Room tools disabled")});
   b.net.on("host_kick",p=>{if(p.target!==b.getMe()?.id)return;alert(p.ban?"You were banned from this room.":"You were kicked from this room.");b.leaveToHub?.()});
   const originalHelloHandlers=b.onPlayerHello;
   window.DDG_ROOM_TOOLS_ENABLED=true;
@@ -144,8 +149,7 @@ addEventListener("DOMContentLoaded",()=>{
  ensureOverlay();buildHotbar();injectMenus();updateHotbar();wireBridge();
  const syncScreen=e=>{
   const inGame=(e?.detail?.screen||"hubScreen")==="gameScreen";
-  const bar=document.querySelector("#ddgToolHotbar"),menu=document.querySelector("#ddgMenuButton");
-  if(bar)bar.hidden=!inGame||window.DDG_ROOM_TOOLS_ENABLED===false;
+  const menu=document.querySelector("#ddgMenuButton");
   if(menu)menu.hidden=!inGame;
  };
  addEventListener("ddg-screen-change",syncScreen);

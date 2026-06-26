@@ -7,7 +7,8 @@ const MODES={
  warfare:{name:"Cube Warfare",desc:"Red vs Blue team battles with three weapons.",world:[2600,1450]},
  freedraw:{name:"Free Drawing",desc:"Draw anywhere across a giant shared map.",world:[3200,2100]},
  create:{name:"Create Mode",desc:"Build, save, load, test, and share simple games.",world:[2600,1700]},
- platform:{name:"Platformer Chaos",desc:"Early side-view building prototype.",world:[2500,1300]}
+ platform:{name:"Platformer Chaos",desc:"A finished side-view building and drawing mode.",world:[4200,1500]},
+ meat:{name:"MEAT",desc:"Survive ten yellow triangle hunters inside a gigantic maze.",world:[5200,3600]}
 };
 const FACE_ITEMS=[
  ["none","None",0],["happy","Happy",0],["silly","Silly",0],["angry","Angry",0],["sleepy","Sleepy",0],["cool","Cool",0],
@@ -267,7 +268,13 @@ window.DDG_BRIDGE={
   net,
   getState:()=>state,
   getMe:()=>me,
+  getKeys:()=>state?.keys,
+  getJoy:()=>state?.joy,
   getWorld:()=>state?.world,
+  getContext:()=>ctx,
+  getCanvas:()=>canvas,
+  earn:(n,why)=>earn(n,why),
+  drawCube:(c,x,y,size,p)=>drawCube(c,x,y,size,p),
   screenToWorld:(x,y)=>({x:x+(state?.cam.x||0),y:y+(state?.cam.y||0)}),
   isHost:()=>!!state?.host,
   toast:t=>toast(t),
@@ -284,12 +291,16 @@ const maps={
   {name:"Purple Maze",bg:"#211832",walls:[{x:520,y:250,w:140,h:700},{x:980,y:600,w:700,h:120},{x:1900,y:240,w:130,h:760}]}
  ]
 };
-function newState(){const [w,h]=MODES[selectedMode].world;return{mode:selectedMode,world:{w,h},room:"",host:false,hostId:null,players:new Map(),targets:new Map(),keys:new Set(),joy:{x:0,y:0},cam:{x:0,y:0},strokes:[],mine:[],redo:[],draw:false,lastMove:0,lastDraw:0,lastFrame:performance.now(),afkSince:Date.now(),round:{phase:"lobby",time:15,number:0,evilId:null,mapIndex:0,alive:new Set(),winner:""},health:new Map(),teams:new Map(),teamBase:{red:500,blue:500},projectiles:[],cooldowns:{bat:0,laser:0,water:0},creator:{objects:[],placing:false,test:false}}}
+function newState(){const [w,h]=MODES[selectedMode].world;return{mode:selectedMode,world:{w,h},room:"",host:false,hostId:null,players:new Map(),targets:new Map(),keys:new Set(),joy:{x:0,y:0},cam:{x:0,y:0},strokes:[],mine:[],redo:[],draw:false,lastMove:0,lastDraw:0,lastFrame:performance.now(),afkSince:Date.now(),round:{phase:"lobby",time:15,number:0,evilId:null,mapIndex:0,alive:new Set(),winner:""},health:new Map(),teams:new Map(),teamBase:{red:500,blue:500},projectiles:[],cooldowns:{bat:0,laser:0,water:0},creator:{objects:[],placing:false,test:false},moduleData:{}}}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.remove("show"),1800)}
 function resize(){const v=visualViewport||window,d=Math.min(devicePixelRatio||1,2),w=Math.round(v.width||innerWidth),h=Math.round(v.height||innerHeight);canvas.width=w*d;canvas.height=h*d;canvas.style.width=w+"px";canvas.style.height=h+"px";ctx.setTransform(d,0,0,d,0,0)}addEventListener("resize",resize);visualViewport?.addEventListener("resize",resize);resize();
 
-async function enterRoom(room,local,host){avatar().name=censor($("displayNameInput").value||"Derp").slice(0,18)||"Derp";persist();renderAvatarPreview();state=newState();state.room=room;state.host=host;me={id:uid(),...avatar(),x:400+Math.random()*70,y:400+Math.random()*70,size:38,msg:"",msgUntil:0,alive:true};if(host)state.hostId=me.id;$("roomStatus").textContent="Connecting...";
- try{await net.join(room,{...me},local,host);state.players.set(me.id,me);$("roomLabel").textContent=room;$("modeLabel").textContent=MODES[selectedMode].name.toUpperCase();showScreen("gameScreen");setupModeUI();renderPlayers();net.send("hello",{player:me,host,mode:selectedMode});toast("Connected")}catch(e){$("roomStatus").textContent=e.message}}
+async function enterRoom(room,local,host){avatar().name=censor($("displayNameInput").value||"Derp").slice(0,18)||"Derp";persist();renderAvatarPreview();state=newState();state.room=room;state.host=host;
+ try{
+  const cached=JSON.parse(localStorage.getItem("ddg_room_drawings_"+room)||"[]");
+  if(Array.isArray(cached))state.strokes=cached.slice(-1500);
+ }catch{}me={id:uid(),...avatar(),x:400+Math.random()*70,y:400+Math.random()*70,size:38,msg:"",msgUntil:0,alive:true};if(host)state.hostId=me.id;$("roomStatus").textContent="Connecting...";
+ try{await net.join(room,{...me},local,host);state.players.set(me.id,me);$("roomLabel").textContent=room;$("modeLabel").textContent=MODES[selectedMode].name.toUpperCase();showScreen("gameScreen");setupModeUI();renderPlayers();net.send("hello",{player:me,host,mode:selectedMode});net.send("request_snapshot",{target:me.id});toast("Connected")}catch(e){$("roomStatus").textContent=e.message}}
 $("createOnlineBtn").onclick=()=>enterRoom(makeCode(),false,true);$("joinOnlineBtn").onclick=()=>{const r=$("roomCodeInput").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8);if(r.length<4)return;enterRoom(r,false,false)};$("createLocalBtn").onclick=()=>enterRoom(makeCode(),true,true);$("copyRoomBtn").onclick=()=>navigator.clipboard?.writeText(state?.room||"");$("hubBtn").onclick=async()=>{if(state)await net.send("leave",{id:me.id});await net.leave();showScreen("hubScreen")};
 $("fullscreenBtn").onclick=async()=>{
  try{
@@ -317,6 +328,7 @@ function setupModeUI(){
  if(state.mode==="freedraw")state.draw=true;
  if(state.mode==="warfare"){assignTeam(me.id);state.health.set(me.id,100)}
  if(state.mode==="create")loadCreatorLocal();
+ window.DDG_GAMES65?.setup?.(state.mode);
 }
 function assignTeam(id){const red=[...state.teams.values()].filter(x=>x==="red").length,blue=[...state.teams.values()].filter(x=>x==="blue").length;state.teams.set(id,red<=blue?"red":"blue")}
 net.on("connection",s=>{$("connectionLabel").className="pill "+s;$("connectionLabel").textContent=s});
@@ -328,13 +340,25 @@ net.on("heartbeat",status=>{
  if(status==="timeout"||status==="disconnected")console.warn("Realtime heartbeat:",status);
 });
 net.on("presence",a=>{for(const p of a){if(p.host)state.hostId=p.id;if(p.id!==me.id&&!state.players.has(p.id)){state.players.set(p.id,{...p,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.id);state.health.set(p.id,100)}}}renderPlayers()});
-net.on("hello",p=>{if(!p.player)return;if(p.player.id===me?.id)state.players.set(me.id,me);else{state.players.set(p.player.id,{...p.player,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.player.id);state.health.set(p.player.id,100)}}if(p.host)state.hostId=p.player.id;renderPlayers()});
+net.on("hello",p=>{if(!p.player)return;window.DDG_GAMES65?.onPlayerHello?.(p.player);if(p.player.id===me?.id)state.players.set(me.id,me);else{state.players.set(p.player.id,{...p.player,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.player.id);state.health.set(p.player.id,100)}}if(p.host)state.hostId=p.player.id;renderPlayers()});
 net.on("move",p=>{if(p.id!==me.id){if(!state.players.has(p.id))state.players.set(p.id,{id:p.id,name:"Cube",color:"#fff",face:"none",hat:"none",x:p.x,y:p.y,size:38,alive:true});state.targets.set(p.id,{x:p.x,y:p.y})}});
 net.on("chat",p=>{if(window.DDG_MUTED?.has(p.senderId))return;addMessage(censor(p.name),censor(p.text),p.color);const q=state.players.get(p.senderId);if(q){q.msg=censor(p.text);q.msgUntil=Date.now()+3500}});
-net.on("draw",p=>{if(p.senderId!==me.id)state.strokes.push(p)});net.on("undo",p=>state.strokes=state.strokes.filter(s=>s.id!==p.strokeId));net.on("redo",p=>{if(p.stroke)state.strokes.push(p.stroke)});net.on("clear",()=>state.strokes=[]);net.on("afk",p=>{const q=state.players.get(p.id);if(q)q.afk=!!p.afk});net.on("ping_marker",p=>window.dispatchEvent(new CustomEvent("ddg-ping-received",{detail:p})));net.on("leave",p=>{state.players.delete(p.id);renderPlayers()});
+net.on("draw",p=>{if(p.senderId!==me.id)state.strokes.push(p);window.DDG_GAMES65?.network?.("draw",p)});net.on("undo",p=>state.strokes=state.strokes.filter(s=>s.id!==p.strokeId));net.on("redo",p=>{if(p.stroke)state.strokes.push(p.stroke)});net.on("clear",()=>state.strokes=[]);net.on("afk",p=>{const q=state.players.get(p.id);if(q)q.afk=!!p.afk});net.on("ping_marker",p=>window.dispatchEvent(new CustomEvent("ddg-ping-received",{detail:p})));net.on("leave",p=>{state.players.delete(p.id);window.DDG_GAMES65?.network?.("leave",p);renderPlayers()});
 net.on("round_state",p=>{if(!state.host)Object.assign(state.round,p.round)});net.on("caught",p=>{const q=state.players.get(p.id);if(q)q.alive=false;if(p.id===me.id)me.alive=false});
 net.on("war_hit",p=>applyDamage(p.target,p.damage,p.attacker,p.weapon));net.on("projectile",p=>state.projectiles.push(p.projectile));net.on("base_damage",p=>state.teamBase[p.team]=Math.max(0,p.hp));
 net.on("creator_sync",p=>{if(!state.host)state.creator.objects=p.objects||[]});
+net.on("request_snapshot",p=>{
+ if(!state?.host)return;
+ net.send("drawing_snapshot",{target:p.senderId,strokes:state.strokes.slice(-5000)});
+ window.DDG_GAMES65?.sendSnapshot?.(p.senderId);
+});
+net.on("drawing_snapshot",p=>{
+ if(p.target&&p.target!==me?.id)return;
+ if(Array.isArray(p.strokes)&&p.strokes.length)state.strokes=p.strokes.slice(-5000);
+});
+net.on("draw",p=>{
+ try{localStorage.setItem("ddg_room_drawings_"+state.room,JSON.stringify(state.strokes.slice(-1500)))}catch{}
+});
 
 function renderPlayers(){if(!state)return;const d=$("playersList");d.innerHTML="";for(const p of state.players.values()){const r=document.createElement("div");r.className="player-row";let extra="";if(state.mode==="warfare")extra=`<b style="color:${state.teams.get(p.id)==="red"?"#ff6b78":"#65a0ff"}">${state.teams.get(p.id)||"?"}</b>`;if(state.mode==="evil"&&p.id===state.round.evilId)extra='<b style="color:#ff6076">EVIL</b>';r.innerHTML=`<i class="swatch"></i><span></span>${extra}${p.id===state.hostId?'<b class="host-tag">HOST</b>':''}`;r.querySelector("i").style.background=p.color;r.querySelector("span").textContent=p.name;d.append(r)}}
 function addMessage(name,text,color){const d=document.createElement("div");d.className="message";const b=document.createElement("b");b.textContent=name+": ";b.style.color=color||"#7bdcff";d.append(b,document.createTextNode(text));$("chatMessages").append(d);$("chatMessages").scrollTop=1e9}
@@ -346,10 +370,16 @@ function setupJoystick(){const base=$("mobileJoystick"),stick=$("mobileStick");l
 function toggleDraw(){state.draw=!state.draw;$("drawBtn").textContent="Draw: "+(state.draw?"ON":"OFF");$("mobileAltBtn").textContent=state.draw?"MOVE":"DRAW"}$("drawBtn").onclick=$("mobileAltBtn").onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};$("undoBtn").onclick=()=>{const id=state?.mine.pop();if(!id)return toast("Nothing to undo");const stroke=state.strokes.find(s=>s.id===id);if(stroke)state.redo.push(stroke);state.strokes=state.strokes.filter(s=>s.id!==id);net.send("undo",{strokeId:id})};
 $("redoBtn").onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast("Nothing to redo");state.strokes.push(stroke);state.mine.push(stroke.id);net.send("redo",{stroke})};$("clearBtn").onclick=()=>{if(!state?.host)return toast("Host only");state.strokes=[];net.send("clear",{})};$("actionBtn").onclick=$("mobileActionBtn").onclick=doAction;
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
-function doAction(){if(!state||!me)return;if(state.mode==="warfare")fireWeapon();else if(state.mode==="create")state.creator.placing=!state.creator.placing;else{me.msg="uses invisible object";me.msgUntil=Date.now()+2500}}
+function doAction(){
+ if(!state||!me)return;
+ if(window.DDG_GAMES65?.action?.(state.mode))return;
+ if(state.mode==="warfare")fireWeapon();
+ else if(state.mode==="create")state.creator.placing=!state.creator.placing;
+ else{me.msg="uses invisible object";me.msgUntil=Date.now()+2500}
+}
 
 let drawing=false,lastPoint=null;
-canvas.onpointerdown=e=>{if(state)state.afkSince=Date.now();if(state?.mode==="create"&&state.creator.placing){placeCreatorObject(e);return}if(!state?.draw)return;const p=screenToWorld(e.clientX,e.clientY);if(state.mode==="og"&&!inside(p,{x:1050,y:170,w:960,h:850}))return toast("Draw inside the pink zone");drawing=true;lastPoint=p};
+canvas.onpointerdown=e=>{if(state)state.afkSince=Date.now();if(window.DDG_GAMES65?.pointerDown?.(state?.mode,e))return;if(state?.mode==="create"&&state.creator.placing){placeCreatorObject(e);return}if(!state?.draw)return;const p=screenToWorld(e.clientX,e.clientY);if(state.mode==="og"&&!inside(p,{x:1050,y:170,w:960,h:850}))return toast("Draw inside the pink zone");drawing=true;lastPoint=p};
 canvas.onpointermove=e=>{if(!drawing||!state?.draw)return;const now=performance.now();if(now-state.lastDraw<28)return;const p=screenToWorld(e.clientX,e.clientY),s={id:uid(),owner:me.id,x1:lastPoint.x,y1:lastPoint.y,x2:p.x,y2:p.y,color:$("brushColor").value,size:7};state.strokes.push(s);state.mine.push(s.id);state.redo=[];net.send("draw",s);lastPoint=p;state.lastDraw=now};canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;lastPoint=null};
 
 function updateEvil(dt){
@@ -379,6 +409,8 @@ $("createPlaceBtn").onclick=()=>{state.creator.placing=!state.creator.placing;to
 try{const q=new URLSearchParams(location.search).get("map");if(q){save.creatorMaps[0]=JSON.parse(decodeURIComponent(escape(atob(q))));persist()}}catch{}
 
 function collisionMove(nx,ny){
+ const moduleResult=window.DDG_GAMES65?.collision?.(state?.mode,nx,ny);
+ if(moduleResult)return moduleResult;
  const p={x:nx,y:ny};let blocked=false;
  if(state.mode==="evil"){for(const w of maps.evil[state.round.mapIndex]?.walls||[])if(nx+20>w.x&&nx-20<w.x+w.w&&ny+20>w.y&&ny-20<w.y+w.h)blocked=true}
  if(state.mode==="create"&&state.creator.test){for(const o of state.creator.objects)if(o.type==="block"&&nx+20>o.x-o.w/2&&nx-20<o.x+o.w/2&&ny+20>o.y-o.h/2&&ny-20<o.y+o.h/2)blocked=true}
@@ -386,22 +418,28 @@ function collisionMove(nx,ny){
 }
 function update(dt){
  if(!state||!me)return;state.players.set(me.id,me);if(performance.now()-lastEarn>30000){lastEarn=performance.now();earn(1,"playing")}
- let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280;if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
+ const handled=window.DDG_GAMES65?.update?.(state.mode,dt)===true;
+ if(!handled){
+  let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280;if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
+ }
  for(const[id,t]of state.targets){const p=state.players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}if(performance.now()-state.lastMove>(C.MOVE_INTERVAL||90)){net.send("move",{id:me.id,x:me.x,y:me.y});state.lastMove=performance.now()}
  const vw=visualViewport?.width||innerWidth,vh=visualViewport?.height||innerHeight;state.cam.x=me.x-vw/2;state.cam.y=me.y-vh/2;
  if(state.mode==="evil")updateEvil(dt);if(state.mode==="warfare")updateWarfare(dt);
 }
 function draw(){
  const vw=visualViewport?.width||innerWidth,vh=visualViewport?.height||innerHeight;ctx.clearRect(0,0,vw,vh);ctx.fillStyle="#080e19";ctx.fillRect(0,0,vw,vh);if(!state)return;ctx.save();ctx.translate(-state.cam.x,-state.cam.y);
+ if(window.DDG_GAMES65?.drawBackground?.(state.mode,ctx)){ /* module drew background */ } else {
  let bg="#17263d";if(state.mode==="evil")bg=maps.evil[state.round.mapIndex]?.bg||bg;if(state.mode==="warfare")bg="#19233a";if(state.mode==="freedraw")bg="#f2ead7";if(state.mode==="create")bg="#172a25";ctx.fillStyle=bg;ctx.fillRect(0,0,state.world.w,state.world.h);
+ }
  ctx.strokeStyle=state.mode==="freedraw"?"#00000010":"#ffffff0b";for(let x=0;x<state.world.w;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,state.world.h);ctx.stroke()}for(let y=0;y<state.world.h;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(state.world.w,y);ctx.stroke()}
  if(state.mode==="og"){ctx.fillStyle="#271a39";ctx.fillRect(1050,170,960,850);ctx.strokeStyle="#ff4fc3";ctx.lineWidth=5;ctx.setLineDash([18,12]);ctx.strokeRect(1050,170,960,850);ctx.setLineDash([])}
  if(state.mode==="evil"){ctx.fillStyle="#10141f";for(const w of maps.evil[state.round.mapIndex]?.walls||[])ctx.fillRect(w.x,w.y,w.w,w.h)}
  if(state.mode==="warfare"){ctx.fillStyle="#8a2734";ctx.fillRect(80,state.world.h/2-180,170,360);ctx.fillStyle="#27568a";ctx.fillRect(state.world.w-250,state.world.h/2-180,170,360);ctx.fillStyle="#fff";ctx.font="bold 24px Arial";ctx.fillText(state.teamBase.red,120,state.world.h/2);ctx.fillText(state.teamBase.blue,state.world.w-210,state.world.h/2)}
  if(state.mode==="create"){for(const o of state.creator.objects){ctx.globalAlpha=o.type==="spawn"?.45:1;ctx.fillStyle=o.color;ctx.fillRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);ctx.globalAlpha=1;ctx.fillStyle="#fff";ctx.font="12px Arial";ctx.fillText(o.type,o.x-o.w/2+5,o.y-o.h/2+16)}}
+ window.DDG_GAMES65?.drawWorld?.(state.mode,ctx);
  for(const s of state.strokes){ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.strokeStyle=s.color;ctx.lineWidth=s.size;ctx.lineCap="round";ctx.stroke()}
  for(const pr of state.projectiles){ctx.beginPath();ctx.arc(pr.x,pr.y,pr.radius*(pr.weapon==="laser"?.5:.7),0,7);ctx.fillStyle=pr.weapon==="laser"?"#ffdc5f":"#65c8ff";ctx.fill()}
- for(const p of state.players.values())if(p.id!==me.id)drawPlayer(p);drawPlayer(me);
+ for(const p of state.players.values())if(p.id!==me.id)drawPlayer(p);drawPlayer(me);window.DDG_GAMES65?.drawForeground?.(state.mode,ctx);
  ctx.strokeStyle="#4a607d";ctx.lineWidth=8;ctx.strokeRect(0,0,state.world.w,state.world.h);ctx.restore()
 }
 function drawPlayer(p){if(!p)return;ctx.globalAlpha=p.alive===false?.35:1;drawCube(ctx,p.x,p.y,p.size||38,p);ctx.globalAlpha=1;ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";if(window.DDG_SYSTEMS?.settings.showNames!==false)ctx.fillText(p.name||"Cube",p.x,p.y-(p.size||38)*.8);if(p.afk){ctx.fillStyle="#ffd86b";ctx.font="bold 11px Arial";ctx.fillText("AFK",p.x,p.y-(p.size||38)*1.18);ctx.fillStyle="#fff";ctx.font="bold 14px Arial"}if(p.msg&&p.msgUntil>Date.now()&&window.DDG_SYSTEMS?.settings.showChatBubbles!==false){

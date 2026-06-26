@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08101d">
-<title>DaDerpGame v6.3</title>
+<title>DaDerpGame v6.5</title>
 <link rel="stylesheet" href="style.css?v=5.0.0">
 </head>
 <body>
@@ -49,15 +49,20 @@
       <p>Place, resize, recolor, save, load, test, and share simple games.</p>
       <button data-mode="create">Open Editor</button>
     </article>
+    <article class="game-card lime">
+      <span class="badge playable">SURVIVAL</span><h2>MEAT</h2>
+      <p>Explore a gigantic maze, barricade paths, teleport to teammates, and survive ten hunting triangles.</p>
+      <button data-mode="meat">Play</button>
+    </article>
     <article class="game-card purple">
-      <span class="badge prototype">PROTOTYPE</span><h2>Platformer Chaos</h2>
-      <p>Side-view movement and building remains as the next major mode.</p>
-      <button data-mode="platform">Play Prototype</button>
+      <span class="badge playable">PLAYABLE</span><h2>Platformer Chaos</h2>
+      <p>Jump, build temporary platforms, explore, and see drawings already made in the room.</p>
+      <button data-mode="platform">Play</button>
     </article>
   </div>
 
   <div class="promise">No microtransactions. No pay-to-win. Just derps.</div>
-  <div class="version">DaDerpGame v6.3</div>
+  <div class="version">DaDerpGame v6.5</div>
 </section>
 
 <section id="roomScreen" class="screen">
@@ -93,7 +98,7 @@
   <aside id="roundPanel" class="floating-panel hidden">
     <h3 id="roundTitle">Waiting...</h3>
     <div id="roundTimer">--</div>
-    <div id="roundInfo"></div>
+    <div id="roundInfo"></div><button id="modeExtraBtn" class="hidden">Mode Action</button>
   </aside>
 
   <aside id="playersPanel" class="floating-panel"><h3>Players</h3><div id="playersList"></div></aside>
@@ -173,11 +178,12 @@
 </dialog>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=6.3.0"></script>
-<script src="systems.js?v=6.3.0"></script>
-<script src="app.js?v=6.3.0"></script>
-<script src="tools.js?v=6.3.0"></script>
-<script src="qol.js?v=6.3.0"></script>
-<script src="mobile-fixes.js?v=6.3.0"></script>
+<script src="config.js?v=6.5.0"></script>
+<script src="systems.js?v=6.5.0"></script>
+<script src="app.js?v=6.5.0"></script>
+<script src="tools.js?v=6.5.0"></script>
+<script src="qol.js?v=6.5.0"></script>
+<script src="mobile-fixes.js?v=6.5.0"></script>
+<script src="games-v65.js?v=6.5.0"></script>
 </body>
 </html>

@@ -1,21 +1,48 @@
-# DaDerpGame v6.3 — Bugfix & Mobile Cleanup
+# DaDerpGame v6.5 — MEAT & Platformer
 
-## Fixed
+## Hotbar removed
 
-- Avatar customization now previews changes without resetting the selected face, hat, or color.
-- Saving an avatar slot now correctly keeps the chosen appearance.
-- The Tools hotbar and Menu button no longer appear on the home page or room screen.
-- The minimap is hidden outside active games.
-- Mobile controls no longer stack every panel on top of the joystick.
-- Chat, tools, round information, and Create Mode controls move into a clean mobile HUD menu.
-- Top-bar buttons are smaller and horizontally scrollable on narrow screens.
-- Tool hotbar buttons are smaller on mobile while the joystick keeps its usable size.
+The always-visible tool hotbar has been removed. Harmless tools remain available through the in-game Menu under Tools.
 
-## Added
+## MEAT
 
-- Fullscreen toggle on desktop and supported mobile browsers.
-- Compact mobile HUD button.
-- Dark tap-outside shade to close the mobile HUD.
-- New `mobile-fixes.js` module so mobile layout behavior is separate from core gameplay.
+- Huge maze map with plenty of room
+- Ten yellow triangle hunters
+- Three hunter behaviors:
+  - direct path hunters
+  - route-blocking hunters
+  - large step hunters with cooldowns
+- Survival timer and Derpiness rewards
+- Carry and place wooden crates
+- Stronger rusted-metal barricades
+- Barricade durability and triangle damage
+- Teleport-to-player button
+- Online host synchronization
 
-Replace the repository root files with this version.
+## Platformer Chaos
+
+- Side-view movement
+- Gravity and jumping
+- Large scrolling level
+- Permanent starter platforms
+- Toggleable platform-building mode
+- Shared user-created platforms
+- Drawing remains available and synchronized
+
+## Drawing recovery
+
+When joining a room, the client requests a drawing snapshot from the host. Recent room drawings are also cached locally as a fallback.
+
+## Stronger censor
+
+Expanded blocked terms and tighter fuzzy matching catch additional evasions, including spellings such as `dicc`, number swaps, repeated letters, and punctuation tricks.
+
+## Modular game file
+
+MEAT and Platformer logic live in:
+
+- `games-v65.js`
+
+This keeps the main app smaller and gives future games a dedicated extension point.
+
+Replace all repository root files with this version.
