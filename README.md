@@ -1,66 +1,66 @@
-# DaDerpGame v5
+# DaDerpGame v6 — Modular Tools & Settings
 
-A major expansion of the current uploaded game.
+This focused update is built from the uploaded current GitHub repository.
 
-## Playable modes
+## New modular scripts
 
-- OG Derp
-- Survive the Evil Boi
-- Cube Warfare
-- Free Drawing
-- Create Mode
-- Platformer Chaos prototype
+- `systems.js` — stronger censoring and saved personal settings
+- `tools.js` — harmless tools, tool hotbar, player controls, and host controls
+- `app.js` — keeps the shared game and mode systems
 
-## Survive the Evil Boi
+Future tools can be added to `tools.js` without rewriting the core game. If it becomes large, it can be split into a `tools/` folder later.
 
-- 15-second lobby countdown
-- 90-second rounds
-- Random Evil Boi selection
-- Three rotating maps
-- Faster Evil Boi
-- Catching and spectator-style transparency
-- Win/result phase
-- Derpiness rewards
+## Harmless Tools
 
-## Cube Warfare
+- Confetti Cannon
+- Bubble Wand
+- Dice
+- Coin Flipper
 
-- Red and Blue teams
-- Player health and respawning
-- Team bases
-- Bat: strong, very short range, quick swing
-- Mini Laser Cannon: high damage, area projectile, slow recharge
-- Water Gun: low damage, fast recharge
-- Knockout rewards
+Tools can be enabled or disabled for your personal hotbar.
 
-## Avatar system
+## Settings menu
 
-- Five save slots
-- More faces and hats
-- Derpiness shop
-- All purchases use play-earned Derpiness only
-- No real-money purchases
+- Particles on/off
+- Confetti on/off
+- Bubbles on/off
+- Player names
+- Chat bubbles
+- Low-performance mode
+- Adjustable mobile joystick size
 
-## Derpiness
+## Player and host controls
 
-Earned by:
-- Playing over time
-- Starting/finishing rounds
-- Winning rounds
-- Warfare knockouts
+Players can locally mute another player.
 
-## Create Mode
+Room hosts can:
+- Kick players from the current room
+- Ban players for the current room session
+- Clear drawings
+- Toggle room tools
 
-- Place blocks, spawn areas, goals, hazards, drawing boards, and bounce pads
-- Resize and recolor objects
-- Save/load one local map
-- Test collision
-- Share maps through URL data
+These are friendly-room browser controls. They are not server-authoritative account bans.
 
-## Installation
+## Stronger censoring
 
-Replace the repository root files with:
-- index.html
-- style.css
-- config.js
-- app.js
-- README.md
+The new censor checks:
+- Standard blocked words
+- Number substitutions and leetspeak
+- Punctuation inserted between letters
+- Repeated letters
+- Similar spellings
+- Consonant patterns
+
+Examples such as `f.u.c.k`, `f4ck`, and `f44ck` are masked as complete words.
+
+## Install
+
+Replace the root project files with everything in this folder. The required scripts are:
+
+- `index.html`
+- `style.css`
+- `config.js`
+- `systems.js`
+- `app.js`
+- `tools.js`
+- `README.md`

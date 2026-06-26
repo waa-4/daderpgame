@@ -14,3 +14,26 @@ dialog{border:none;background:transparent;color:#fff;max-width:none}.dialog-card
 @media(max-width:980px){.game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px),(pointer:coarse){#playersPanel{display:none}#chatPanel{top:auto;bottom:calc(clamp(112px,25vw,150px) + 34px);right:7px;width:min(310px,calc(100% - 14px));height:min(220px,31vh)}#toolPanel{left:7px;right:7px;bottom:6px;transform:none;justify-content:center}#toolPanel button:nth-of-type(n+4),#brushColor{display:none}#mobileJoystick,#mobileButtons{display:flex}#toast{bottom:calc(clamp(112px,25vw,150px) + 40px)}#createPanel{top:62px;bottom:auto;width:220px}}
 @media(max-width:600px){#hubScreen{padding:13px}.game-grid{grid-template-columns:1fr}.header-actions{width:100%}.header-actions button{flex:1}.wallet{margin-left:0}.customize-grid{grid-template-columns:1fr}.customize-grid canvas{margin:auto}#shopList{grid-template-columns:1fr}.join-row{flex-direction:column}#topbar{transform:scale(.82);transform-origin:top left;right:-18%}.game-card{min-height:260px}}
+
+:root{--joystick-scale:1}
+#mobileJoystick{transform:scale(var(--joystick-scale));transform-origin:left bottom}
+#toolParticleCanvas{position:fixed;inset:0;z-index:70;pointer-events:none}
+#ddgMenuButton{position:fixed;right:10px;bottom:10px;z-index:85}
+#ddgToolHotbar{position:fixed;left:50%;bottom:66px;transform:translateX(-50%);display:flex;gap:7px;background:#0c1728e9;border:1px solid var(--line);border-radius:15px;padding:7px;z-index:65}
+#ddgToolHotbar button{font-size:22px;padding:7px 10px}
+#ddgToolHotbar button.selected{outline:2px solid #46d7ff}
+#ddgMenuDialog{border:none;background:transparent;color:#fff;max-width:none}
+.ddg-menu-card{width:min(680px,calc(100vw - 20px));max-height:min(760px,calc(100vh - 20px));overflow:auto;background:#0d1728;border:1px solid var(--line);border-radius:19px;padding:17px;box-shadow:0 30px 100px #000b}
+.ddg-menu-head{display:flex;align-items:center}.ddg-menu-head h2{margin:0}.ddg-menu-head button{margin-left:auto}
+.ddg-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0}.ddg-tabs button.active{background:#275077}
+[data-panel]{display:grid;gap:9px;background:#091321;border-radius:12px;padding:12px}
+[data-panel] label{display:flex;justify-content:space-between;align-items:center;gap:12px}
+[data-panel] input[type=checkbox]{width:22px;height:22px}
+.ddg-tool-toggle span{display:grid}.ddg-tool-toggle small{color:var(--muted);font-weight:400}
+.ddg-player-control{display:flex;align-items:center;gap:7px;background:#14233a;border-radius:9px;padding:8px}.ddg-player-control span{flex:1}
+.hide-player-names #gameCanvas{}
+.low-performance #toolParticleCanvas{image-rendering:pixelated}
+@media(max-width:800px),(pointer:coarse){
+ #ddgMenuButton{right:8px;top:54px;bottom:auto}
+ #ddgToolHotbar{bottom:calc(clamp(112px,25vw,150px) + 15px)}
+}
