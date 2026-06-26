@@ -6,7 +6,8 @@ const toolDefs=[
   {id:"confetti",name:"Confetti Cannon",icon:"🎉",desc:"Shoots harmless confetti."},
   {id:"bubbles",name:"Bubble Wand",icon:"🫧",desc:"Creates floating bubbles."},
   {id:"dice",name:"Dice",icon:"🎲",desc:"Rolls a synced number."},
-  {id:"coin",name:"Coin Flipper",icon:"🪙",desc:"Flips heads or tails."}
+  {id:"coin",name:"Coin Flipper",icon:"🪙",desc:"Flips heads or tails."},
+  {id:"ping",name:"Ping Marker",icon:"📍",desc:"Marks a place for the room."}
 ];
 const particles=[];
 let overlay,ctx,last=performance.now(),selectedTool="confetti";
@@ -58,6 +59,7 @@ function useTool(id,remote=false){
   if(id==="bubbles")burst("bubble");
   if(id==="dice"){const n=1+Math.floor(Math.random()*6);bridge.sendChat?.(`rolled a ${n} 🎲`)}
   if(id==="coin"){bridge.sendChat?.(Math.random()<.5?"flipped HEADS 🪙":"flipped TAILS 🪙")}
+  if(id==="ping"){window.dispatchEvent(new CustomEvent("ddg-ping-mode"))}
   if(!remote)bridge.net?.send("tool_use",{tool:id});
 }
 function buildHotbar(){

@@ -40,12 +40,13 @@ function censor(value){
 }
 const defaults={
   particles:true,confetti:true,bubbles:true,showNames:true,showChatBubbles:true,
-  lowPerformance:false,joystickSize:1,toolSounds:true,enabledTools:["confetti","bubbles","dice","coin"]
+  lowPerformance:false,joystickSize:1,uiScale:1,masterVolume:1,musicVolume:.7,effectsVolume:.9,toolSounds:true,chatHidden:false,minimap:true,enabledTools:["confetti","bubbles","dice","coin","ping"]
 };
 let settings={...defaults,...JSON.parse(localStorage.ddg_settings||"{}")};
 function saveSettings(){localStorage.ddg_settings=JSON.stringify(settings);applySettings()}
 function applySettings(){
   document.documentElement.style.setProperty("--joystick-scale",String(settings.joystickSize));
+  document.documentElement.style.setProperty("--ui-scale",String(settings.uiScale||1));
   document.body.classList.toggle("hide-player-names",!settings.showNames);
   document.body.classList.toggle("hide-chat-bubbles",!settings.showChatBubbles);
   document.body.classList.toggle("low-performance",!!settings.lowPerformance);

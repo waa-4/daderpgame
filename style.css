@@ -37,3 +37,15 @@ dialog{border:none;background:transparent;color:#fff;max-width:none}.dialog-card
  #ddgMenuButton{right:8px;top:54px;bottom:auto}
  #ddgToolHotbar{bottom:calc(clamp(112px,25vw,150px) + 15px)}
 }
+
+:root{--ui-scale:1}
+#topbar,#playersPanel,#roundPanel,#chatPanel,#toolPanel,#createPanel,#ddgMenuButton,#ddgToolHotbar{zoom:var(--ui-scale)}
+#chatPanel.chat-collapsed{height:auto;min-height:0;width:auto}
+#chatPanel.chat-collapsed #chatMessages,#chatPanel.chat-collapsed .chat-row,#chatPanel.chat-collapsed .quick-chat,#chatPanel.chat-collapsed h3{display:none}
+#chatHideBtn{margin-top:6px;padding:6px 8px;font-size:11px}
+#chatUnreadBadge{position:fixed;right:10px;top:62px;z-index:72;background:#0d1728;border-color:#46d7ff}
+#ddgMinimap{position:fixed;left:10px;bottom:70px;width:180px;height:120px;border-radius:11px;z-index:58;pointer-events:auto}
+@media(max-width:800px),(pointer:coarse){
+ #ddgMinimap{left:auto;right:8px;bottom:calc(clamp(112px,25vw,150px) + 55px);width:130px;height:86px}
+ #chatUnreadBadge{right:8px;top:54px}
+}
