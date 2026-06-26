@@ -22,7 +22,11 @@ const uid=()=>crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).s
 const makeCode=(n=6)=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:n},()=>a[Math.random()*a.length|0]).join("")};
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const inside=(p,r)=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
-function showScreen(id){for(const s of SCREENS)$(s).classList.toggle("active",s===id)}
+function showScreen(id){
+ for(const s of SCREENS)$(s).classList.toggle("active",s===id);
+ document.body.classList.remove("mobile-ui-open");
+ window.dispatchEvent(new CustomEvent("ddg-screen-change",{detail:{screen:id}}));
+}
 
 const DEFAULT_AVATAR={name:"Derp",color:"#46d7ff",face:"happy",hat:"none"};
 const save=JSON.parse(localStorage.ddg_v5_save||"null")||{
@@ -65,18 +69,58 @@ function drawCube(ct,cx,cy,size,p){
 function renderAvatarPreview(){for(const id of ["profilePreview","avatarPreview"]){const cv=$(id),ct=cv.getContext("2d");ct.clearRect(0,0,cv.width,cv.height);drawCube(ct,cv.width/2,cv.height/2+9,Math.min(cv.width,cv.height)*.58,avatar())}$("profilePreviewName").textContent=avatar().name;$("displayNameInput").value=avatar().name;$("activeSlotLabel").textContent=save.activeSlot+1}
 renderAvatarPreview();
 
-function populateAvatarUI(){
+function drawAvatarEditorPreview(){
+ const cv=$("avatarPreview"),ct=cv.getContext("2d");
+ ct.clearRect(0,0,cv.width,cv.height);
+ drawCube(ct,cv.width/2,cv.height/2+9,95,{
+  ...avatar(),
+  color:$("avatarColor").value,
+  face:$("avatarFace").value,
+  hat:$("avatarHat").value
+ });
+}
+function populateAvatarUI(resetFields=true){
  $("avatarFace").innerHTML=FACE_ITEMS.map(([id,n,c])=>`<option value="${id}" ${!save.unlockedFaces.includes(id)&&c?"disabled":""}>${n}${!save.unlockedFaces.includes(id)?` — ${c} D`:""}</option>`).join("");
  $("avatarHat").innerHTML=HAT_ITEMS.map(([id,n,c])=>`<option value="${id}" ${!save.unlockedHats.includes(id)&&c?"disabled":""}>${n}${!save.unlockedHats.includes(id)?` — ${c} D`:""}</option>`).join("");
- $("avatarColor").value=avatar().color;$("avatarFace").value=avatar().face;$("avatarHat").value=avatar().hat;
- const sr=$("avatarSlots");sr.innerHTML="";for(let i=0;i<5;i++){const b=document.createElement("button");b.type="button";b.textContent=`Slot ${i+1}`;b.classList.toggle("active",i===save.activeSlot);b.onclick=()=>{save.activeSlot=i;persist();populateAvatarUI();renderAvatarPreview()};sr.append(b)}
+ if(resetFields){
+  $("avatarColor").value=avatar().color;
+  $("avatarFace").value=avatar().face;
+  $("avatarHat").value=avatar().hat;
+ }
+ const sr=$("avatarSlots");sr.innerHTML="";
+ for(let i=0;i<5;i++){
+  const b=document.createElement("button");b.type="button";b.textContent=`Slot ${i+1}`;
+  b.classList.toggle("active",i===save.activeSlot);
+  b.onclick=()=>{save.activeSlot=i;persist();populateAvatarUI(true);renderAvatarPreview()};
+  sr.append(b)
+ }
  const shop=$("shopList");shop.innerHTML="";
- for(const [type,list,key] of [["Face",FACE_ITEMS,"unlockedFaces"],["Hat",HAT_ITEMS,"unlockedHats"]])for(const [id,n,c] of list){if(!c||save[key].includes(id))continue;const d=document.createElement("div");d.className="shop-item";d.innerHTML=`<span>${type}: <b>${n}</b></span><button type="button">${c} D</button>`;d.querySelector("button").onclick=()=>{if(!spend(c))return toast("Not enough Derpiness");save[key].push(id);persist();populateAvatarUI();toast(`Unlocked ${n}`)};shop.append(d)}
- const cv=$("avatarPreview"),ct=cv.getContext("2d");ct.clearRect(0,0,cv.width,cv.height);drawCube(ct,cv.width/2,cv.height/2+9,95,{...avatar(),color:$("avatarColor").value,face:$("avatarFace").value,hat:$("avatarHat").value});
+ for(const [type,list,key] of [["Face",FACE_ITEMS,"unlockedFaces"],["Hat",HAT_ITEMS,"unlockedHats"]]){
+  for(const [id,n,c] of list){
+   if(!c||save[key].includes(id))continue;
+   const d=document.createElement("div");d.className="shop-item";
+   d.innerHTML=`<span>${type}: <b>${n}</b></span><button type="button">${c} D</button>`;
+   d.querySelector("button").onclick=()=>{
+    if(!spend(c))return toast("Not enough Derpiness");
+    save[key].push(id);persist();populateAvatarUI(false);toast(`Unlocked ${n}`)
+   };
+   shop.append(d)
+  }
+ }
+ drawAvatarEditorPreview();
 }
-$("avatarBtn").onclick=()=>{populateAvatarUI();$("avatarDialog").showModal()};
-for(const id of ["avatarColor","avatarFace","avatarHat"])$(id).oninput=populateAvatarUI;
-$("saveAvatarBtn").onclick=()=>{Object.assign(avatar(),{color:$("avatarColor").value,face:$("avatarFace").value,hat:$("avatarHat").value});persist();renderAvatarPreview();$("avatarDialog").close();toast("Avatar slot saved")};
+$("avatarBtn").onclick=()=>{populateAvatarUI(true);$("avatarDialog").showModal()};
+for(const id of ["avatarColor","avatarFace","avatarHat"]){
+ $(id).oninput=drawAvatarEditorPreview;
+}
+$("saveAvatarBtn").onclick=()=>{
+ Object.assign(avatar(),{
+  color:$("avatarColor").value,
+  face:$("avatarFace").value,
+  hat:$("avatarHat").value
+ });
+ persist();renderAvatarPreview();$("avatarDialog").close();toast("Avatar slot saved")
+};
 
 $("friendsBtn").onclick=()=>{renderFriends();$("friendsDialog").showModal()};$("myFriendCode").textContent=save.friendCode;$("copyFriendBtn").onclick=()=>navigator.clipboard?.writeText(save.friendCode);$("addFriendBtn").onclick=()=>{const f=$("friendCodeInput").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,10);if(f.length<5||f===save.friendCode)return;if(!save.friends.includes(f))save.friends.push(f);$("friendCodeInput").value="";persist();renderFriends()};function renderFriends(){const d=$("friendsList");d.innerHTML=save.friends.length?"":'<p class="muted">No friends yet.</p>';for(const f of save.friends){const r=document.createElement("div");r.className="friend-item";r.innerHTML=`<b>${f}</b><span class="muted">saved friend</span><button type="button">Remove</button>`;r.querySelector("button").onclick=()=>{save.friends=save.friends.filter(x=>x!==f);persist();renderFriends()};d.append(r)}}
 
@@ -247,6 +291,21 @@ function resize(){const v=visualViewport||window,d=Math.min(devicePixelRatio||1,
 async function enterRoom(room,local,host){avatar().name=censor($("displayNameInput").value||"Derp").slice(0,18)||"Derp";persist();renderAvatarPreview();state=newState();state.room=room;state.host=host;me={id:uid(),...avatar(),x:400+Math.random()*70,y:400+Math.random()*70,size:38,msg:"",msgUntil:0,alive:true};if(host)state.hostId=me.id;$("roomStatus").textContent="Connecting...";
  try{await net.join(room,{...me},local,host);state.players.set(me.id,me);$("roomLabel").textContent=room;$("modeLabel").textContent=MODES[selectedMode].name.toUpperCase();showScreen("gameScreen");setupModeUI();renderPlayers();net.send("hello",{player:me,host,mode:selectedMode});toast("Connected")}catch(e){$("roomStatus").textContent=e.message}}
 $("createOnlineBtn").onclick=()=>enterRoom(makeCode(),false,true);$("joinOnlineBtn").onclick=()=>{const r=$("roomCodeInput").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8);if(r.length<4)return;enterRoom(r,false,false)};$("createLocalBtn").onclick=()=>enterRoom(makeCode(),true,true);$("copyRoomBtn").onclick=()=>navigator.clipboard?.writeText(state?.room||"");$("hubBtn").onclick=async()=>{if(state)await net.send("leave",{id:me.id});await net.leave();showScreen("hubScreen")};
+$("fullscreenBtn").onclick=async()=>{
+ try{
+  if(!document.fullscreenElement){
+   await document.documentElement.requestFullscreen?.();
+   $("fullscreenBtn").textContent="Exit Fullscreen";
+  }else{
+   await document.exitFullscreen?.();
+  }
+ }catch{toast("Fullscreen is not available here")}
+};
+document.addEventListener("fullscreenchange",()=>{
+ $("fullscreenBtn").textContent=document.fullscreenElement?"Exit Fullscreen":"Fullscreen";
+});
+$("mobileHudBtn").onclick=()=>document.body.classList.toggle("mobile-ui-open");
+$("mobileHudShade").onclick=()=>document.body.classList.remove("mobile-ui-open");
 
 function setupModeUI(){
  $("roundPanel").classList.toggle("hidden",!["evil","warfare"].includes(state.mode));

@@ -77,7 +77,7 @@ function setAfk(value,manual=false){
 function drawMinimap(){
   if(!miniCtx||S.settings.minimap===false){minimap.hidden=true;return}
   const b=bridge(),st=b?.getState?.(),me=b?.getMe?.(),world=b?.getWorld?.();
-  if(!st||!me||!world){minimap.hidden=true;return}
+  if(!st||!me||!world||!document.querySelector("#gameScreen")?.classList.contains("active")){minimap.hidden=true;return}
   minimap.hidden=false;const w=minimap.width,h=minimap.height;
   miniCtx.clearRect(0,0,w,h);miniCtx.fillStyle="#07111fe8";miniCtx.fillRect(0,0,w,h);miniCtx.strokeStyle="#45617f";miniCtx.strokeRect(1,1,w-2,h-2);
   const sx=w/world.w,sy=h/world.h;

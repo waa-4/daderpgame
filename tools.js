@@ -69,7 +69,7 @@ function buildHotbar(){
     b.onclick=()=>{selectedTool=t.id;useTool(t.id);bar.querySelectorAll("button").forEach(x=>x.classList.toggle("selected",x===b))};
     bar.append(b);
   }
-  document.body.append(bar);
+  bar.hidden=true;document.body.append(bar);
   bar.querySelector("button")?.classList.add("selected");
 }
 function injectMenus(){
@@ -92,7 +92,7 @@ function injectMenus(){
     <section data-panel="players"><div id="ddgPlayersMenu"></div></section>
     <section data-panel="host"><p>These controls appear when you are room host.</p><div id="ddgHostMenu"></div><button id="hostClearDrawings">Clear all drawings</button><button id="hostDisableTools">Toggle room tools</button></section>
   </div></dialog>`;
-  document.body.append(...host.children);
+  document.body.append(...host.children);document.querySelector("#ddgMenuButton").hidden=true;
   const d=document.querySelector("#ddgMenuDialog");
   document.querySelector("#ddgMenuButton").onclick=()=>{renderMenus();d.showModal()};
   document.querySelector("#ddgMenuClose").onclick=()=>d.close();
@@ -135,10 +135,20 @@ function wireBridge(){
   const b=getBridge();
   if(!b)return setTimeout(wireBridge,100);
   b.net.on("tool_use",p=>{if(p.senderId!==b.getMe()?.id)useTool(p.tool,true)});
-  b.net.on("room_tools",p=>{window.DDG_ROOM_TOOLS_ENABLED=p.enabled;document.querySelector("#ddgToolHotbar").hidden=!p.enabled;b.toast?.(p.enabled?"Room tools enabled":"Room tools disabled")});
+  b.net.on("room_tools",p=>{window.DDG_ROOM_TOOLS_ENABLED=p.enabled;document.querySelector("#ddgToolHotbar").hidden=!p.enabled||!document.querySelector("#gameScreen")?.classList.contains("active");b.toast?.(p.enabled?"Room tools enabled":"Room tools disabled")});
   b.net.on("host_kick",p=>{if(p.target!==b.getMe()?.id)return;alert(p.ban?"You were banned from this room.":"You were kicked from this room.");b.leaveToHub?.()});
   const originalHelloHandlers=b.onPlayerHello;
   window.DDG_ROOM_TOOLS_ENABLED=true;
 }
-addEventListener("DOMContentLoaded",()=>{ensureOverlay();buildHotbar();injectMenus();updateHotbar();wireBridge()});
+addEventListener("DOMContentLoaded",()=>{
+ ensureOverlay();buildHotbar();injectMenus();updateHotbar();wireBridge();
+ const syncScreen=e=>{
+  const inGame=(e?.detail?.screen||"hubScreen")==="gameScreen";
+  const bar=document.querySelector("#ddgToolHotbar"),menu=document.querySelector("#ddgMenuButton");
+  if(bar)bar.hidden=!inGame||window.DDG_ROOM_TOOLS_ENABLED===false;
+  if(menu)menu.hidden=!inGame;
+ };
+ addEventListener("ddg-screen-change",syncScreen);
+ syncScreen({detail:{screen:document.querySelector("#gameScreen")?.classList.contains("active")?"gameScreen":"hubScreen"}});
+});
 })();
