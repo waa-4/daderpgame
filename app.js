@@ -83,15 +83,137 @@ $("friendsBtn").onclick=()=>{renderFriends();$("friendsDialog").showModal()};$("
 let selectedMode="og";document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{selectedMode=b.dataset.mode;$("roomModeTitle").textContent=MODES[selectedMode].name;$("roomModeDescription").textContent=MODES[selectedMode].desc;showScreen("roomScreen")});document.querySelectorAll("[data-back-hub]").forEach(b=>b.onclick=()=>showScreen("hubScreen"));
 
 class Network{
- constructor(){this.client=window.supabase?.createClient(C.SUPABASE_URL,C.SUPABASE_PUBLISHABLE_KEY)||null;this.channel=null;this.bc=null;this.local=false;this.handlers={};this.player=null}
- on(t,f){(this.handlers[t]??=[]).push(f)}emit(t,p){for(const f of this.handlers[t]||[])try{f(p)}catch(e){console.error(e)}}
- async join(room,player,local,host){await this.leave();this.player=player;this.local=local;if(local){this.bc=new BroadcastChannel("ddg-v5:"+room);this.bc.onmessage=e=>this.emit(e.data.type,e.data);this.emit("connection","online");this.send("hello",{player,host});return}
-  if(!this.client)throw Error("Supabase did not load");this.emit("connection","connecting");this.channel=this.client.channel("ddg-v5:"+room,{config:{presence:{key:player.id},broadcast:{self:true}}});
-  this.channel.on("presence",{event:"sync"},()=>{const a=[];for(const v of Object.values(this.channel.presenceState()))for(const p of v)a.push(p);this.emit("presence",a)}).on("broadcast",{event:"game"},({payload})=>this.emit(payload.type,payload));
-  await new Promise((res,rej)=>{const t=setTimeout(()=>rej(Error("Connection timed out")),12000);this.channel.subscribe(async s=>{if(s==="SUBSCRIBED"){clearTimeout(t);await this.channel.track({...player,host});this.emit("connection","online");res()}else if(["CHANNEL_ERROR","TIMED_OUT"].includes(s)){clearTimeout(t);rej(Error("Realtime failed"))}})})
+ constructor(){
+  this.channel=null;this.bc=null;this.local=false;this.handlers={};this.player=null;
+  this.room="";this.host=false;this.reconnecting=false;this.manualLeave=false;
+  this.lastReceive=Date.now();this.watchdog=null;this.reconnectTimer=null;
+  let clientRef=null;
+  this.client=window.supabase?.createClient(C.SUPABASE_URL,C.SUPABASE_PUBLISHABLE_KEY,{
+   realtime:{
+    worker:true,
+    heartbeatIntervalMs:15000,
+    heartbeatCallback:(status)=>{
+     this.emit("heartbeat",status);
+     if(status==="ok")this.lastReceive=Date.now();
+     if(status==="timeout"||status==="disconnected"){
+      this.emit("connection","reconnecting");
+      setTimeout(()=>clientRef?.realtime?.connect?.(),250);
+      this.scheduleReconnect("heartbeat "+status);
+     }
+    }
+   }
+  })||null;
+  clientRef=this.client;
+  document.addEventListener("visibilitychange",()=>{
+   if(!document.hidden&&!this.local&&this.room){
+    if(!this.client?.realtime?.isConnected?.())this.client?.realtime?.connect?.();
+    if(Date.now()-this.lastReceive>9000)this.scheduleReconnect("tab resumed");
+   }
+  });
+  addEventListener("online",()=>{if(this.room&&!this.local)this.scheduleReconnect("network online")});
  }
- async send(type,data={}){const p={...data,type,senderId:this.player?.id,sentAt:Date.now()};if(this.local){this.bc?.postMessage(p);this.emit(type,p)}else if(this.channel)await this.channel.send({type:"broadcast",event:"game",payload:p})}
- async leave(){try{this.bc?.close()}catch{}this.bc=null;if(this.channel&&this.client)try{await this.client.removeChannel(this.channel)}catch{}this.channel=null}
+ on(t,f){(this.handlers[t]??=[]).push(f)}
+ emit(t,p){for(const f of this.handlers[t]||[])try{f(p)}catch(e){console.error(e)}}
+ createChannel(){
+  const topic="ddg-v6:"+this.room;
+  this.channel=this.client.channel(topic,{config:{presence:{key:this.player.id},broadcast:{self:true,ack:false}}});
+  this.channel
+   .on("presence",{event:"sync"},()=>{
+    this.lastReceive=Date.now();
+    const a=[];for(const v of Object.values(this.channel.presenceState()))for(const p of v)a.push(p);
+    this.emit("presence",a)
+   })
+   .on("broadcast",{event:"game"},({payload})=>{
+    this.lastReceive=Date.now();
+    this.emit(payload.type,payload)
+   });
+ }
+ async subscribe(){
+  return new Promise((res,rej)=>{
+   const timeout=setTimeout(()=>rej(Error("Connection timed out")),14000);
+   this.channel.subscribe(async(status,err)=>{
+    if(status==="SUBSCRIBED"){
+     clearTimeout(timeout);this.lastReceive=Date.now();this.reconnecting=false;
+     await this.channel.track({...this.player,host:this.host});
+     this.emit("connection","online");res();
+    }else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+     this.emit("connection","reconnecting");
+     if(!this.manualLeave)this.scheduleReconnect(status);
+     if(status!=="CLOSED"){clearTimeout(timeout);rej(Error("Realtime "+status.toLowerCase()))}
+    }
+   })
+  })
+ }
+ async join(room,player,local,host){
+  await this.leave(false);
+  this.manualLeave=false;this.player=player;this.local=local;this.room=room;this.host=host;
+  if(local){
+   this.bc=new BroadcastChannel("ddg-v6:"+room);
+   this.bc.onmessage=e=>{this.lastReceive=Date.now();this.emit(e.data.type,e.data)};
+   this.emit("connection","online");this.startWatchdog();this.send("hello",{player,host});return;
+  }
+  if(!this.client)throw Error("Supabase did not load");
+  this.emit("connection","connecting");
+  this.createChannel();
+  await this.subscribe();
+  this.startWatchdog();
+ }
+ startWatchdog(){
+  clearInterval(this.watchdog);
+  this.watchdog=setInterval(()=>{
+   if(!this.room)return;
+   if(this.local){this.send("net_ping",{nonce:Date.now()});return}
+   const age=Date.now()-this.lastReceive;
+   if(age>11000){this.emit("connection","reconnecting");this.scheduleReconnect("watchdog")}
+   else this.send("net_ping",{nonce:Date.now()}).catch(()=>this.scheduleReconnect("ping failed"));
+  },4000)
+ }
+ scheduleReconnect(reason){
+  if(this.local||this.manualLeave||!this.room||this.reconnecting)return;
+  this.reconnecting=true;
+  clearTimeout(this.reconnectTimer);
+  this.reconnectTimer=setTimeout(()=>this.reconnect(reason),600);
+ }
+ async reconnect(reason){
+  if(this.local||this.manualLeave||!this.room)return;
+  this.emit("connection","reconnecting");
+  try{
+   if(this.channel&&this.client)await this.client.removeChannel(this.channel).catch(()=>{});
+   this.channel=null;
+   this.client?.realtime?.connect?.();
+   this.createChannel();
+   await this.subscribe();
+   await this.send("hello",{player:this.player,host:this.host,reconnected:true});
+   await this.send("request_snapshot",{});
+   this.lastReceive=Date.now();
+   this.emit("reconnected",{reason});
+  }catch(err){
+   console.warn("Realtime reconnect failed:",err);
+   this.reconnecting=false;
+   clearTimeout(this.reconnectTimer);
+   this.reconnectTimer=setTimeout(()=>this.scheduleReconnect("retry"),1800);
+  }
+ }
+ async send(type,data={}){
+  const p={...data,type,senderId:this.player?.id,sentAt:Date.now()};
+  if(this.local){this.bc?.postMessage(p);this.emit(type,p);return}
+  if(!this.channel){this.scheduleReconnect("send without channel");return}
+  try{
+   const result=await this.channel.send({type:"broadcast",event:"game",payload:p});
+   if(result==="timed out"||result==="error")this.scheduleReconnect("send "+result);
+   return result;
+  }catch(err){this.scheduleReconnect("send exception");throw err}
+ }
+ async leave(manual=true){
+  this.manualLeave=manual;
+  clearInterval(this.watchdog);clearTimeout(this.reconnectTimer);
+  this.watchdog=null;this.reconnectTimer=null;
+  try{this.bc?.close()}catch{}this.bc=null;
+  if(this.channel&&this.client)try{await this.client.removeChannel(this.channel)}catch{}
+  this.channel=null;
+  if(manual){this.room="";this.player=null}
+  this.emit("connection","offline")
+ }
 }
 const net=new Network();
 const canvas=$("gameCanvas"),ctx=canvas.getContext("2d");
@@ -137,6 +259,13 @@ function setupModeUI(){
 }
 function assignTeam(id){const red=[...state.teams.values()].filter(x=>x==="red").length,blue=[...state.teams.values()].filter(x=>x==="blue").length;state.teams.set(id,red<=blue?"red":"blue")}
 net.on("connection",s=>{$("connectionLabel").className="pill "+s;$("connectionLabel").textContent=s});
+net.on("reconnected",()=>{
+ toast("Online connection restored");
+ if(me)net.send("hello",{player:me,host:state?.host,mode:state?.mode,reconnected:true});
+});
+net.on("heartbeat",status=>{
+ if(status==="timeout"||status==="disconnected")console.warn("Realtime heartbeat:",status);
+});
 net.on("presence",a=>{for(const p of a){if(p.host)state.hostId=p.id;if(p.id!==me.id&&!state.players.has(p.id)){state.players.set(p.id,{...p,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.id);state.health.set(p.id,100)}}}renderPlayers()});
 net.on("hello",p=>{if(!p.player)return;if(p.player.id===me?.id)state.players.set(me.id,me);else{state.players.set(p.player.id,{...p.player,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.player.id);state.health.set(p.player.id,100)}}if(p.host)state.hostId=p.player.id;renderPlayers()});
 net.on("move",p=>{if(p.id!==me.id){if(!state.players.has(p.id))state.players.set(p.id,{id:p.id,name:"Cube",color:"#fff",face:"none",hat:"none",x:p.x,y:p.y,size:38,alive:true});state.targets.set(p.id,{x:p.x,y:p.y})}});
@@ -196,7 +325,7 @@ function collisionMove(nx,ny){
 function update(dt){
  if(!state||!me)return;state.players.set(me.id,me);if(performance.now()-lastEarn>30000){lastEarn=performance.now();earn(1,"playing")}
  let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280;if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
- for(const[id,t]of state.targets){const p=state.players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}if(performance.now()-state.lastMove>60){net.send("move",{id:me.id,x:me.x,y:me.y});state.lastMove=performance.now()}
+ for(const[id,t]of state.targets){const p=state.players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}if(performance.now()-state.lastMove>(C.MOVE_INTERVAL||90)){net.send("move",{id:me.id,x:me.x,y:me.y});state.lastMove=performance.now()}
  const vw=visualViewport?.width||innerWidth,vh=visualViewport?.height||innerHeight;state.cam.x=me.x-vw/2;state.cam.y=me.y-vh/2;
  if(state.mode==="evil")updateEvil(dt);if(state.mode==="warfare")updateWarfare(dt);
 }
