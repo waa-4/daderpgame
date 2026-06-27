@@ -5,7 +5,7 @@ const BLOCKED = [
   "porn","sex","rape","rapist","nazi",
   "dick","dicc","dik","cock","penis","pussy","vagina","cunt","cum","jizz",
   "boob","boobs","tits","whore","slut","bastard","motherfucker","pedo","pedophile",
-  "incest","hentai","nude","nudes","suckmy","blowjob","handjob"
+  "incest","hentai","nude","nudes","suckmy","blowjob","handjob","d1ck","d1cc","d!ck","d!cc","dck","dikk","dixk","dickhead","prick","ballsack","nutsack","testicle","testicles","anal","anus","orgasm","horny","semen","fetish","onlyfans","masturbate","masturbation","jerkoff","killurself","kill yourself","suicide","selfharm"
 ];
 const SUBS = {"0":"o","1":"i","!":"i","3":"e","4":"a","@":"a","5":"s","$":"s","7":"t","+":"t","8":"b","9":"g"};
 const normalize = value => String(value||"")
@@ -35,11 +35,18 @@ function suspicious(token){
   });
 }
 function censor(value){
-  return String(value||"")
-    .replace(/[<>]/g,"")
-    .split(/(\s+)/)
-    .map(part => /\s+/.test(part) ? part : (suspicious(part) ? "*".repeat(Math.max(3,part.length)) : part))
-    .join("");
+  const raw=String(value||"").replace(/[<>]/g,"");
+  const pieces=raw.split(/(\s+)/);
+  let result=pieces.map(part => /\s+/.test(part) ? part : (suspicious(part) ? "*".repeat(Math.max(3,part.length)) : part)).join("");
+  const glued=normalize(raw);
+  for(const word of BLOCKED){
+    const w=normalize(word);
+    if(w.length>=3&&glued.includes(w)){
+      result=result.replace(/\S+/g,token=>suspicious(token)?"*".repeat(Math.max(3,token.length)):token);
+      break;
+    }
+  }
+  return result;
 }
 const defaults={
   particles:true,confetti:true,bubbles:true,showNames:true,showChatBubbles:true,

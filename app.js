@@ -8,6 +8,7 @@ const MODES={
  freedraw:{name:"Free Drawing",desc:"Draw anywhere across a giant shared map.",world:[3200,2100]},
  create:{name:"Create Mode",desc:"Build, save, load, test, and share simple games.",world:[2600,1700]},
  platform:{name:"Platformer Chaos",desc:"A finished side-view building and drawing mode.",world:[4200,1500]},
+ machine:{name:"Machine Game",desc:"Build working machines with wires and logic blocks.",world:[3600,2200]},
  meat:{name:"MEAT",desc:"Survive ten yellow triangle hunters inside a gigantic maze.",world:[5200,3600]}
 };
 const FACE_ITEMS=[
@@ -275,6 +276,10 @@ window.DDG_BRIDGE={
   getCanvas:()=>canvas,
   earn:(n,why)=>earn(n,why),
   drawCube:(c,x,y,size,p)=>drawCube(c,x,y,size,p),
+  uid,
+  clamp,
+  getCreator:()=>state?.creator,
+  syncCreator:()=>net.send("creator_sync",{objects:state?.creator?.objects||[]}),
   screenToWorld:(x,y)=>({x:x+(state?.cam.x||0),y:y+(state?.cam.y||0)}),
   isHost:()=>!!state?.host,
   toast:t=>toast(t),
@@ -322,13 +327,14 @@ function setupModeUI(){
  $("roundPanel").classList.toggle("hidden",!["evil","warfare"].includes(state.mode));
  $("weaponSelect").classList.toggle("hidden",state.mode!=="warfare");
  $("createPanel").classList.toggle("hidden",state.mode!=="create");
+ $("machinePanel")?.classList.toggle("hidden",state.mode!=="machine");
  $("drawBtn").classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
  $("undoBtn").classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
  $("clearBtn").classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
  if(state.mode==="freedraw")state.draw=true;
  if(state.mode==="warfare"){assignTeam(me.id);state.health.set(me.id,100)}
  if(state.mode==="create")loadCreatorLocal();
- window.DDG_GAMES65?.setup?.(state.mode);
+ window.DDG_GAMES66?.setup?.(state.mode);
 }
 function assignTeam(id){const red=[...state.teams.values()].filter(x=>x==="red").length,blue=[...state.teams.values()].filter(x=>x==="blue").length;state.teams.set(id,red<=blue?"red":"blue")}
 net.on("connection",s=>{$("connectionLabel").className="pill "+s;$("connectionLabel").textContent=s});
@@ -340,17 +346,19 @@ net.on("heartbeat",status=>{
  if(status==="timeout"||status==="disconnected")console.warn("Realtime heartbeat:",status);
 });
 net.on("presence",a=>{for(const p of a){if(p.host)state.hostId=p.id;if(p.id!==me.id&&!state.players.has(p.id)){state.players.set(p.id,{...p,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.id);state.health.set(p.id,100)}}}renderPlayers()});
-net.on("hello",p=>{if(!p.player)return;window.DDG_GAMES65?.onPlayerHello?.(p.player);if(p.player.id===me?.id)state.players.set(me.id,me);else{state.players.set(p.player.id,{...p.player,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.player.id);state.health.set(p.player.id,100)}}if(p.host)state.hostId=p.player.id;renderPlayers()});
+net.on("hello",p=>{if(!p.player)return;window.DDG_GAMES66?.onPlayerHello?.(p.player);if(p.player.id===me?.id)state.players.set(me.id,me);else{state.players.set(p.player.id,{...p.player,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.player.id);state.health.set(p.player.id,100)}}if(p.host)state.hostId=p.player.id;renderPlayers()});
 net.on("move",p=>{if(p.id!==me.id){if(!state.players.has(p.id))state.players.set(p.id,{id:p.id,name:"Cube",color:"#fff",face:"none",hat:"none",x:p.x,y:p.y,size:38,alive:true});state.targets.set(p.id,{x:p.x,y:p.y})}});
 net.on("chat",p=>{if(window.DDG_MUTED?.has(p.senderId))return;addMessage(censor(p.name),censor(p.text),p.color);const q=state.players.get(p.senderId);if(q){q.msg=censor(p.text);q.msgUntil=Date.now()+3500}});
-net.on("draw",p=>{if(p.senderId!==me.id)state.strokes.push(p);window.DDG_GAMES65?.network?.("draw",p)});net.on("undo",p=>state.strokes=state.strokes.filter(s=>s.id!==p.strokeId));net.on("redo",p=>{if(p.stroke)state.strokes.push(p.stroke)});net.on("clear",()=>state.strokes=[]);net.on("afk",p=>{const q=state.players.get(p.id);if(q)q.afk=!!p.afk});net.on("ping_marker",p=>window.dispatchEvent(new CustomEvent("ddg-ping-received",{detail:p})));net.on("leave",p=>{state.players.delete(p.id);window.DDG_GAMES65?.network?.("leave",p);renderPlayers()});
+net.on("draw",p=>{if(p.senderId!==me.id)state.strokes.push(p);window.DDG_GAMES66?.network?.("draw",p)});net.on("undo",p=>state.strokes=state.strokes.filter(s=>s.id!==p.strokeId));net.on("redo",p=>{if(p.stroke)state.strokes.push(p.stroke)});net.on("clear",()=>state.strokes=[]);net.on("afk",p=>{const q=state.players.get(p.id);if(q)q.afk=!!p.afk});net.on("ping_marker",p=>window.dispatchEvent(new CustomEvent("ddg-ping-received",{detail:p})));net.on("leave",p=>{state.players.delete(p.id);window.DDG_GAMES66?.network?.("leave",p);renderPlayers()});
 net.on("round_state",p=>{if(!state.host)Object.assign(state.round,p.round)});net.on("caught",p=>{const q=state.players.get(p.id);if(q)q.alive=false;if(p.id===me.id)me.alive=false});
 net.on("war_hit",p=>applyDamage(p.target,p.damage,p.attacker,p.weapon));net.on("projectile",p=>state.projectiles.push(p.projectile));net.on("base_damage",p=>state.teamBase[p.team]=Math.max(0,p.hp));
 net.on("creator_sync",p=>{if(!state.host)state.creator.objects=p.objects||[]});
+net.on("machine_sync",p=>window.DDG_MACHINE?.network?.("machine_sync",p));
+net.on("machine_event",p=>window.DDG_MACHINE?.network?.("machine_event",p));
 net.on("request_snapshot",p=>{
  if(!state?.host)return;
  net.send("drawing_snapshot",{target:p.senderId,strokes:state.strokes.slice(-5000)});
- window.DDG_GAMES65?.sendSnapshot?.(p.senderId);
+ window.DDG_GAMES66?.sendSnapshot?.(p.senderId);
 });
 net.on("drawing_snapshot",p=>{
  if(p.target&&p.target!==me?.id)return;
@@ -372,15 +380,15 @@ $("redoBtn").onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
 function doAction(){
  if(!state||!me)return;
- if(window.DDG_GAMES65?.action?.(state.mode))return;
+ if(window.DDG_GAMES66?.action?.(state.mode))return;
  if(state.mode==="warfare")fireWeapon();
  else if(state.mode==="create")state.creator.placing=!state.creator.placing;
  else{me.msg="uses invisible object";me.msgUntil=Date.now()+2500}
 }
 
 let drawing=false,lastPoint=null;
-canvas.onpointerdown=e=>{if(state)state.afkSince=Date.now();if(window.DDG_GAMES65?.pointerDown?.(state?.mode,e))return;if(state?.mode==="create"&&state.creator.placing){placeCreatorObject(e);return}if(!state?.draw)return;const p=screenToWorld(e.clientX,e.clientY);if(state.mode==="og"&&!inside(p,{x:1050,y:170,w:960,h:850}))return toast("Draw inside the pink zone");drawing=true;lastPoint=p};
-canvas.onpointermove=e=>{if(!drawing||!state?.draw)return;const now=performance.now();if(now-state.lastDraw<28)return;const p=screenToWorld(e.clientX,e.clientY),s={id:uid(),owner:me.id,x1:lastPoint.x,y1:lastPoint.y,x2:p.x,y2:p.y,color:$("brushColor").value,size:7};state.strokes.push(s);state.mine.push(s.id);state.redo=[];net.send("draw",s);lastPoint=p;state.lastDraw=now};canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;lastPoint=null};
+canvas.onpointerdown=e=>{if(state)state.afkSince=Date.now();if(window.DDG_MACHINE?.pointerDown?.(state?.mode,e))return;if(window.DDG_CREATE66?.pointerDown?.(state?.mode,e))return;if(window.DDG_GAMES66?.pointerDown?.(state?.mode,e))return;if(state?.mode==="create"&&state.creator.placing){placeCreatorObject(e);return}if(!state?.draw)return;const p=screenToWorld(e.clientX,e.clientY);if(state.mode==="og"&&!inside(p,{x:1050,y:170,w:960,h:850}))return toast("Draw inside the pink zone");drawing=true;lastPoint=p};
+canvas.onpointermove=e=>{if(window.DDG_CREATE66?.pointerMove?.(state?.mode,e))return;if(!drawing||!state?.draw)return;const now=performance.now();if(now-state.lastDraw<28)return;const p=screenToWorld(e.clientX,e.clientY),s={id:uid(),owner:me.id,x1:lastPoint.x,y1:lastPoint.y,x2:p.x,y2:p.y,color:$("brushColor").value,size:7};state.strokes.push(s);state.mine.push(s.id);state.redo=[];net.send("draw",s);lastPoint=p;state.lastDraw=now};canvas.onpointerup=canvas.onpointercancel=()=>{window.DDG_CREATE66?.pointerUp?.();drawing=false;lastPoint=null};
 
 function updateEvil(dt){
  const r=state.round;if(state.host){r.time-=dt;if(r.phase==="lobby"&&r.time<=0){r.phase="round";r.time=90;r.number++;r.mapIndex=(r.number-1)%maps.evil.length;const ids=[...state.players.keys()];r.evilId=ids[Math.floor(Math.random()*ids.length)]||me.id;r.alive=new Set(ids.filter(id=>id!==r.evilId));for(const p of state.players.values())p.alive=true;net.send("round_state",{round:{...r,alive:[...r.alive]}});earn(2,"round started")}
@@ -408,8 +416,28 @@ function loadCreatorLocal(){state.creator.objects=JSON.parse(JSON.stringify(save
 $("createPlaceBtn").onclick=()=>{state.creator.placing=!state.creator.placing;toast(state.creator.placing?"Click the map to place":"Placement off")};$("createTestBtn").onclick=()=>{state.creator.test=!state.creator.test;$("createTestBtn").textContent=`Test: ${state.creator.test?"ON":"OFF"}`};$("createSaveBtn").onclick=saveCreatorLocal;$("createLoadBtn").onclick=()=>{loadCreatorLocal();toast("Loaded")};$("createClearBtn").onclick=()=>{state.creator.objects=[];toast("Cleared")};$("createShareBtn").onclick=()=>{const data=btoa(unescape(encodeURIComponent(JSON.stringify(state.creator.objects))));const url=location.origin+location.pathname+"?map="+encodeURIComponent(data);navigator.clipboard?.writeText(url);toast("Share link copied")};
 try{const q=new URLSearchParams(location.search).get("map");if(q){save.creatorMaps[0]=JSON.parse(decodeURIComponent(escape(atob(q))));persist()}}catch{}
 
+
+function pushOutsideRect(x,y,r,pad=24){
+ const left=Math.abs((x+pad)-r.x),right=Math.abs((r.x+r.w)-(x-pad));
+ const top=Math.abs((y+pad)-r.y),bottom=Math.abs((r.y+r.h)-(y-pad));
+ const m=Math.min(left,right,top,bottom);
+ if(m===left)return{x:r.x-pad-2,y};
+ if(m===right)return{x:r.x+r.w+pad+2,y};
+ if(m===top)return{x,y:r.y-pad-2};
+ return{x,y:r.y+r.h+pad+2};
+}
+function depenetratePlayer(){
+ if(!state||!me)return;
+ const custom=window.DDG_GAMES66?.solidRects?.(state.mode)||[];
+ const creator=state.mode==="create"?(state.creator?.objects||[]).filter(o=>o.type==="block").map(o=>({x:o.x-o.w/2,y:o.y-o.h/2,w:o.w,h:o.h})):[];
+ for(const r of [...custom,...creator]){
+  if(me.x+22>r.x&&me.x-22<r.x+r.w&&me.y+22>r.y&&me.y-22<r.y+r.h){
+   const p=pushOutsideRect(me.x,me.y,r,22);me.x=clamp(p.x,24,state.world.w-24);me.y=clamp(p.y,24,state.world.h-24);
+  }
+ }
+}
 function collisionMove(nx,ny){
- const moduleResult=window.DDG_GAMES65?.collision?.(state?.mode,nx,ny);
+ const moduleResult=window.DDG_GAMES66?.collision?.(state?.mode,nx,ny);
  if(moduleResult)return moduleResult;
  const p={x:nx,y:ny};let blocked=false;
  if(state.mode==="evil"){for(const w of maps.evil[state.round.mapIndex]?.walls||[])if(nx+20>w.x&&nx-20<w.x+w.w&&ny+20>w.y&&ny-20<w.y+w.h)blocked=true}
@@ -418,7 +446,8 @@ function collisionMove(nx,ny){
 }
 function update(dt){
  if(!state||!me)return;state.players.set(me.id,me);if(performance.now()-lastEarn>30000){lastEarn=performance.now();earn(1,"playing")}
- const handled=window.DDG_GAMES65?.update?.(state.mode,dt)===true;
+ depenetratePlayer();
+ const handled=window.DDG_GAMES66?.update?.(state.mode,dt)===true;
  if(!handled){
   let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280;if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
  }
@@ -428,7 +457,7 @@ function update(dt){
 }
 function draw(){
  const vw=visualViewport?.width||innerWidth,vh=visualViewport?.height||innerHeight;ctx.clearRect(0,0,vw,vh);ctx.fillStyle="#080e19";ctx.fillRect(0,0,vw,vh);if(!state)return;ctx.save();ctx.translate(-state.cam.x,-state.cam.y);
- if(window.DDG_GAMES65?.drawBackground?.(state.mode,ctx)){ /* module drew background */ } else {
+ if(window.DDG_GAMES66?.drawBackground?.(state.mode,ctx)){ /* module drew background */ } else {
  let bg="#17263d";if(state.mode==="evil")bg=maps.evil[state.round.mapIndex]?.bg||bg;if(state.mode==="warfare")bg="#19233a";if(state.mode==="freedraw")bg="#f2ead7";if(state.mode==="create")bg="#172a25";ctx.fillStyle=bg;ctx.fillRect(0,0,state.world.w,state.world.h);
  }
  ctx.strokeStyle=state.mode==="freedraw"?"#00000010":"#ffffff0b";for(let x=0;x<state.world.w;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,state.world.h);ctx.stroke()}for(let y=0;y<state.world.h;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(state.world.w,y);ctx.stroke()}
@@ -436,10 +465,10 @@ function draw(){
  if(state.mode==="evil"){ctx.fillStyle="#10141f";for(const w of maps.evil[state.round.mapIndex]?.walls||[])ctx.fillRect(w.x,w.y,w.w,w.h)}
  if(state.mode==="warfare"){ctx.fillStyle="#8a2734";ctx.fillRect(80,state.world.h/2-180,170,360);ctx.fillStyle="#27568a";ctx.fillRect(state.world.w-250,state.world.h/2-180,170,360);ctx.fillStyle="#fff";ctx.font="bold 24px Arial";ctx.fillText(state.teamBase.red,120,state.world.h/2);ctx.fillText(state.teamBase.blue,state.world.w-210,state.world.h/2)}
  if(state.mode==="create"){for(const o of state.creator.objects){ctx.globalAlpha=o.type==="spawn"?.45:1;ctx.fillStyle=o.color;ctx.fillRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);ctx.globalAlpha=1;ctx.fillStyle="#fff";ctx.font="12px Arial";ctx.fillText(o.type,o.x-o.w/2+5,o.y-o.h/2+16)}}
- window.DDG_GAMES65?.drawWorld?.(state.mode,ctx);
+ window.DDG_GAMES66?.drawWorld?.(state.mode,ctx);window.DDG_MACHINE?.drawWorld?.(state.mode,ctx);window.DDG_CREATE66?.drawWorld?.(state.mode,ctx);
  for(const s of state.strokes){ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.strokeStyle=s.color;ctx.lineWidth=s.size;ctx.lineCap="round";ctx.stroke()}
  for(const pr of state.projectiles){ctx.beginPath();ctx.arc(pr.x,pr.y,pr.radius*(pr.weapon==="laser"?.5:.7),0,7);ctx.fillStyle=pr.weapon==="laser"?"#ffdc5f":"#65c8ff";ctx.fill()}
- for(const p of state.players.values())if(p.id!==me.id)drawPlayer(p);drawPlayer(me);window.DDG_GAMES65?.drawForeground?.(state.mode,ctx);
+ for(const p of state.players.values())if(p.id!==me.id)drawPlayer(p);drawPlayer(me);window.DDG_GAMES66?.drawForeground?.(state.mode,ctx);window.DDG_MACHINE?.drawForeground?.(state.mode,ctx);
  ctx.strokeStyle="#4a607d";ctx.lineWidth=8;ctx.strokeRect(0,0,state.world.w,state.world.h);ctx.restore()
 }
 function drawPlayer(p){if(!p)return;ctx.globalAlpha=p.alive===false?.35:1;drawCube(ctx,p.x,p.y,p.size||38,p);ctx.globalAlpha=1;ctx.fillStyle="#fff";ctx.font="bold 14px Arial";ctx.textAlign="center";if(window.DDG_SYSTEMS?.settings.showNames!==false)ctx.fillText(p.name||"Cube",p.x,p.y-(p.size||38)*.8);if(p.afk){ctx.fillStyle="#ffd86b";ctx.font="bold 11px Arial";ctx.fillText("AFK",p.x,p.y-(p.size||38)*1.18);ctx.fillStyle="#fff";ctx.font="bold 14px Arial"}if(p.msg&&p.msgUntil>Date.now()&&window.DDG_SYSTEMS?.settings.showChatBubbles!==false){
