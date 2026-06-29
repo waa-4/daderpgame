@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08101d">
-<title>DaDerpGame v8.1</title>
+<title>DaDerpGame v7.2</title>
 <link rel="stylesheet" href="style.css?v=5.0.0">
 </head>
 <body>
@@ -14,7 +14,7 @@
     <div class="brand-cube"></div>
     <div>
       <h1>DaDerpGame</h1>
-      <p>tiny 2D and 3D games for friends</p>
+      <p>tiny 2D games for friends</p>
     </div>
     <div class="wallet">Derpiness: <b id="derpinessLabel">0</b></div>
     <div class="header-actions">
@@ -24,50 +24,55 @@
   </header>
 
   <div class="game-grid">
-<article class="game-card cyan">
+    <article class="game-card teal3d">
+      <span class="badge playable">3D EXPERIMENT</span><h2>3D Test Zone</h2>
+      <p>Walk through a blocky 3D room with real walls, collision, camera rotation, mobile controls, and online cubes.</p>
+      <button data-mode="test3d">Enter 3D</button>
+    </article>
+    <article class="game-card cyan">
       <span class="badge playable">PLAYABLE</span><h2>OG Derp</h2>
       <p>Chat, draw, explore, and chill in private rooms.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="og" data-render="2d">Play 2D</button><button class="play-3d" data-mode="og" data-render="3d">Play 3D</button></div>
+      <button class="primary" data-mode="og">Play</button>
     </article>
     <article class="game-card red">
       <span class="badge playable">ROUND GAME</span><h2>Survive the Evil Boi</h2>
       <p>Lobby countdown, random Evil Boi, proper maps, catching, spectators, and round rewards.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="evil" data-render="2d">Play 2D</button><button class="play-3d" data-mode="evil" data-render="3d">Play 3D</button></div>
+      <button data-mode="evil">Play</button>
     </article>
     <article class="game-card blue">
       <span class="badge playable">TEAM BATTLE</span><h2>Cube Warfare</h2>
       <p>Red vs Blue with bats, mini laser cannons, and water guns.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="warfare" data-render="2d">Play 2D</button><button class="play-3d" data-mode="warfare" data-render="3d">Play 3D</button></div>
+      <button data-mode="warfare">Play</button>
     </article>
     <article class="game-card pink">
       <span class="badge playable">ART MODE</span><h2>Free Drawing</h2>
       <p>Draw anywhere across one giant shared map.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="freedraw" data-render="2d">Play 2D</button><button class="play-3d" data-mode="freedraw" data-render="3d">Play 3D</button></div>
+      <button data-mode="freedraw">Play</button>
     </article>
     <article class="game-card gold">
       <span class="badge playable">CREATOR</span><h2>Create Mode</h2>
       <p>Place, resize, recolor, save, load, test, and share simple games.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="create" data-render="2d">Play 2D</button><button class="play-3d" data-mode="create" data-render="3d">Play 3D</button></div>
+      <button data-mode="create">Open Editor</button>
     </article>
     <article class="game-card lime">
       <span class="badge playable">SURVIVAL</span><h2>MEAT</h2>
       <p>Explore a gigantic maze, barricade paths, teleport to teammates, and survive ten hunting triangles.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="meat" data-render="2d">Play 2D</button><button class="play-3d" data-mode="meat" data-render="3d">Play 3D</button></div>
+      <button data-mode="meat">Play</button>
     </article>
     <article class="game-card orange">
       <span class="badge playable">LOGIC SANDBOX</span><h2>Machine Game</h2>
       <p>Draw wires, place switches, displays, logic blocks, timers, movers, sensors, and build working machines.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="machine" data-render="2d">Play 2D</button><button class="play-3d" data-mode="machine" data-render="3d">Play 3D</button></div>
+      <button data-mode="machine">Play</button>
     </article>
     <article class="game-card purple">
       <span class="badge playable">PLAYABLE</span><h2>Platformer Chaos</h2>
       <p>Jump, build temporary platforms, explore, and see drawings already made in the room.</p>
-      <div class="dimension-buttons"><button class="play-2d" data-mode="platform" data-render="2d">Play 2D</button><button class="play-3d" data-mode="platform" data-render="3d">Play 3D</button></div>
+      <button data-mode="platform">Play</button>
     </article>
   </div>
 
   <div class="promise">No microtransactions. No pay-to-win. Just derps.</div>
-  <div class="version">DaDerpGame v8.1</div>
+  <div class="version">DaDerpGame v7.2</div>
 </section>
 
 <section id="roomScreen" class="screen">
@@ -217,17 +222,17 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="config.js?v=8.1.0"></script>
-<script src="systems.js?v=8.1.0"></script>
-<script src="app.js?v=8.1.0"></script>
-<script src="tools.js?v=8.1.0"></script>
-<script src="qol.js?v=8.1.0"></script>
-<script src="mobile-fixes.js?v=8.1.0"></script>
-<script src="games-v66.js?v=8.1.0"></script>
-<script src="machine-game.js?v=8.1.0"></script>
-<script src="create-v66.js?v=8.1.0"></script>
-<script src="mobile-ui-v66.js?v=8.1.0"></script>
-<script src="chat-v7.js?v=8.1.0"></script>
-<script src="renderer-v8.js?v=8.1.0"></script>
+<script src="config.js?v=7.2.0"></script>
+<script src="systems.js?v=7.2.0"></script>
+<script src="app.js?v=7.2.0"></script>
+<script src="tools.js?v=7.2.0"></script>
+<script src="qol.js?v=7.2.0"></script>
+<script src="mobile-fixes.js?v=7.2.0"></script>
+<script src="games-v66.js?v=7.2.0"></script>
+<script src="machine-game.js?v=7.2.0"></script>
+<script src="create-v66.js?v=7.2.0"></script>
+<script src="mobile-ui-v66.js?v=7.2.0"></script>
+<script src="chat-v7.js?v=7.2.0"></script>
+<script src="renderer-3d.js?v=7.2.0"></script>
 </body>
 </html>
