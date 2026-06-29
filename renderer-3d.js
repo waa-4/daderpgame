@@ -28,7 +28,7 @@ const blocks=[
  {x:2050,y:1880,w:260,h:150,height:90,color:0x50d2a0}
 ];
 let scene,camera,renderer,clock,host,active=false;
-let yaw=.72,pitch=.82,distance=520;
+let yaw=.72,pitch=.82,distance=520,verticalVelocity=0,playerHeight=0,onGround=true;
 let dragging=false,lastX=0,lastY=0,pinchDistance=0;
 const playerMeshes=new Map();
 const tempColor=new THREE.Color();
@@ -79,14 +79,13 @@ function addEvents(){
  const c=renderer.domElement;
  c.addEventListener("contextmenu",e=>e.preventDefault());
  c.addEventListener("pointerdown",e=>{
-  if(e.button===2){e.preventDefault();return}
-  dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)
+  dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId);e.preventDefault()
  });
  c.addEventListener("pointermove",e=>{
   if(!dragging)return;
   yaw-=(e.clientX-lastX)*.006;pitch=clamp(pitch+(e.clientY-lastY)*.004,.35,1.18);lastX=e.clientX;lastY=e.clientY
  });
- c.addEventListener("pointerup",()=>dragging=false);c.addEventListener("pointercancel",()=>dragging=false);
+ c.addEventListener("pointerup",()=>dragging=false);c.addEventListener("pointercancel",()=>dragging=false);c.addEventListener("pointerleave",()=>dragging=false);
  c.addEventListener("wheel",e=>{distance=clamp(distance+e.deltaY*.45,260,900);e.preventDefault()},{passive:false});
  c.addEventListener("touchstart",e=>{if(e.touches.length===2)pinchDistance=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)},{passive:true});
  c.addEventListener("touchmove",e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);distance=clamp(distance+(pinchDistance-d)*1.2,260,900);pinchDistance=d}},{passive:true});
@@ -102,6 +101,11 @@ function makePlayerMesh(p){
  body.position.y=21;group.add(body);
  const eyeMat=new THREE.MeshBasicMaterial({color:0x111827});
  for(const x of [-8,8]){const eye=new THREE.Mesh(new THREE.BoxGeometry(5,6,2),eyeMat);eye.position.set(x,25,-21.3);group.add(eye)}
+ const bubble=document.createElement("canvas");bubble.width=256;bubble.height=64;
+ const tex=new THREE.CanvasTexture(bubble);tex.minFilter=THREE.LinearFilter;
+ const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false});
+ const sprite=new THREE.Sprite(mat);sprite.position.set(0,78,0);sprite.scale.set(150,38,1);sprite.visible=false;group.add(sprite);
+ group.userData.chatCanvas=bubble;group.userData.chatTexture=tex;group.userData.chatSprite=sprite;group.userData.lastMsg="";
  scene.add(group);playerMeshes.set(p.id,group);return group;
 }
 function syncPlayers(){
@@ -110,10 +114,21 @@ function syncPlayers(){
  for(const [id,m] of playerMeshes)if(!ids.has(id)){scene.remove(m);playerMeshes.delete(id)}
  for(const p of st.players.values()){
   const m=playerMeshes.get(p.id)||makePlayerMesh(p);
-  m.position.set(p.x,0,p.y);
-  m.rotation.y=yaw;
+  m.position.set(p.x,p.id===B().getMe()?.id?playerHeight:0,p.y);
+  m.rotation.y=yaw+Math.PI;
   const mat=m.children[0]?.material;if(mat?.color){tempColor.set(p.color||"#46d7ff");mat.color.lerp(tempColor,.25)}
-  m.visible=p.alive!==false
+  m.visible=p.alive!==false;
+  const sprite=m.userData.chatSprite,msg=(p.msgUntil>Date.now()&&p.msg)||"";
+  if(sprite){
+   sprite.visible=!!msg&&window.DDG_SYSTEMS?.settings.showChatBubbles!==false;
+   if(msg&&m.userData.lastMsg!==msg){
+    const cv=m.userData.chatCanvas,cx=cv.getContext("2d");
+    cx.clearRect(0,0,cv.width,cv.height);cx.fillStyle="rgba(7,17,31,.92)";cx.fillRect(0,0,cv.width,cv.height);
+    cx.fillStyle="#fff";cx.font="bold 22px Arial";cx.textAlign="center";cx.textBaseline="middle";
+    cx.fillText(msg.length>28?msg.slice(0,27)+"…":msg,cv.width/2,cv.height/2);
+    m.userData.chatTexture.needsUpdate=true;m.userData.lastMsg=msg;
+   }
+  }
  }
 }
 function getInput(){
@@ -133,16 +148,16 @@ function getInput(){
 function movePlayer(dt){
  const me=B().getMe();if(!me)return;
  const i=getInput(),speed=300;
- const nx=clamp(me.x+i.x*speed*dt,24,WORLD.w-24);
- const nz=clamp(me.y+i.z*speed*dt,24,WORLD.h-24);
- if(!intersects(nx,me.y))me.x=nx;
- if(!intersects(me.x,nz))me.y=nz;
+ const nx=clamp(me.x+i.x*speed*dt,24,WORLD.w-24),nz=clamp(me.y+i.z*speed*dt,24,WORLD.h-24);
+ if(!intersects(nx,me.y))me.x=nx;if(!intersects(me.x,nz))me.y=nz;
+ verticalVelocity-=900*dt;playerHeight+=verticalVelocity*dt;
+ if(playerHeight<=0){playerHeight=0;verticalVelocity=0;onGround=true}else onGround=false;
 }
 function updateCamera(){
  const me=B().getMe();if(!me)return;
  const horizontal=Math.cos(pitch)*distance,vertical=Math.sin(pitch)*distance;
- camera.position.set(me.x-Math.sin(yaw)*horizontal,vertical,me.y-Math.cos(yaw)*horizontal);
- camera.lookAt(me.x,22,me.y)
+ camera.position.set(me.x-Math.sin(yaw)*horizontal,vertical+playerHeight*.35,me.y-Math.cos(yaw)*horizontal);
+ camera.lookAt(me.x,22+playerHeight*.45,me.y)
 }
 function loop(){
  if(!active)return;
@@ -151,7 +166,7 @@ function loop(){
 }
 function start(){
  const st=B()?.getState?.(),me=B()?.getMe?.();if(!st||!me)return;
- st.world={...WORLD};const spawn=safeSpawn();me.x=spawn.x;me.y=spawn.z;
+ st.world={...WORLD};const spawn=safeSpawn();me.x=spawn.x;me.y=spawn.z;playerHeight=0;verticalVelocity=0;onGround=true;
  document.body.classList.add("mode-3d");
  document.querySelector("#gameCanvas").style.visibility="hidden";
  document.querySelector("#threeHost").setAttribute("aria-hidden","false");
@@ -175,6 +190,11 @@ function stop(){
  scene=camera=renderer=clock=null
 }
 function update(mode){return mode===MODE}
+function jump(mode){
+ if(mode!==MODE)return false;
+ if(onGround){verticalVelocity=430;onGround=false}
+ return true
+}
 function action(mode){
  if(mode!==MODE)return false;
  yaw+=Math.PI/2;B()?.toast?.("Camera rotated");return true
@@ -187,6 +207,6 @@ function wrap(){
  games.setup=mode=>{originalSetup?.(mode);if(mode===MODE)start();else stop()};
  games.update=(mode,dt)=>mode===MODE?(update(mode,dt),true):(originalUpdate?.(mode,dt)||false);
 }
-window.DDG_3D={start,stop,action,solidRects:()=>allSolids()};
+window.DDG_3D={start,stop,action,jump,solidRects:()=>allSolids()};
 wrap();
 })();

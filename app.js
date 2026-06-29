@@ -381,7 +381,7 @@ addEventListener("keydown",e=>{
  if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
   state.keys.add(k);state.afkSince=Date.now();e.preventDefault()
  }
- if(k===" ")doAction()
+ if(k===" "){if(window.DDG_3D?.jump?.(state?.mode)!==true)doAction();e.preventDefault()}
 });
 addEventListener("keyup",e=>state?.keys.delete(e.key.toLowerCase()));
 const clearHeldInput=()=>{
@@ -403,6 +403,7 @@ function setupJoystick(){const base=$("mobileJoystick"),stick=$("mobileStick");l
 
 function toggleDraw(){state.draw=!state.draw;$("drawBtn").textContent="Draw: "+(state.draw?"ON":"OFF");$("mobileAltBtn").textContent=state.draw?"MOVE":"DRAW"}$("drawBtn").onclick=$("mobileAltBtn").onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};$("undoBtn").onclick=()=>{const id=state?.mine.pop();if(!id)return toast("Nothing to undo");const stroke=state.strokes.find(s=>s.id===id);if(stroke)state.redo.push(stroke);state.strokes=state.strokes.filter(s=>s.id!==id);net.send("undo",{strokeId:id})};
 $("redoBtn").onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast("Nothing to redo");state.strokes.push(stroke);state.mine.push(stroke.id);net.send("redo",{stroke})};$("clearBtn").onclick=()=>{if(!state?.host)return toast("Host only");state.strokes=[];net.send("clear",{})};$("actionBtn").onclick=$("mobileActionBtn").onclick=doAction;
+$("mobileJumpBtn").onclick=()=>{if(window.DDG_3D?.jump?.(state?.mode)!==true)doAction()};
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
 function doAction(){
  if(!state||!me)return;

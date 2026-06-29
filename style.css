@@ -208,3 +208,11 @@ body:not(.game-running) #gameChatButton,body:not(.game-running) #chatPanel{displ
  #threeCameraHint{bottom:calc(clamp(112px,25vw,150px) + 20px);max-width:58vw;text-align:center}
  body.mode-3d #ddgMinimap{display:none!important}
 }
+
+#mobileJumpBtn{display:none}
+@media(max-width:800px),(pointer:coarse){
+ #mobileJumpBtn{display:block}
+ #mobileButtons{display:flex;flex-direction:column;align-items:flex-end}
+ #mobileButtons button{width:64px;height:58px}
+ #mobileJumpBtn{order:-1;background:#244f77}
+}
