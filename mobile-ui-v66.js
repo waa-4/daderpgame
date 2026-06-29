@@ -19,6 +19,7 @@ addEventListener("DOMContentLoaded",()=>{
   document.querySelector("#mobileDrawer")?.classList.remove("open");
   p.classList.add("mobile-active-panel");
  });
+ document.querySelector("#mobileChatOpenBtn")?.addEventListener("click",()=>{closeAll();window.DDG_CHAT?.open?.()});
  document.querySelector("#mobileSettingsBtn").onclick=()=>{closeAll();document.querySelector("#ddgMenuButton")?.click()};
  document.querySelector("#mobileFullscreenBtn").onclick=()=>document.querySelector("#fullscreenBtn")?.click();
 });

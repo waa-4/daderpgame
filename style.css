@@ -183,3 +183,28 @@ body:not(.game-running) #ddgToolHotbar{display:none!important}
   [data-panel] label{align-items:flex-start}
   #machinePanel{display:none}
 }
+
+.teal3d{--accent:#35e3c2}
+#threeHost{position:absolute;inset:0;display:none;z-index:0}
+#threeCanvas{display:block;width:100%;height:100%;touch-action:none}
+body.mode-3d #threeHost{display:block}
+body.mode-3d #gameCanvas{pointer-events:none}
+#threeCameraHint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:19;background:#07111fcc;border:1px solid #47647e;border-radius:999px;padding:7px 12px;font-size:12px;color:#d8edff;pointer-events:none}
+#gameChatButton{display:none;position:fixed;left:10px;top:62px;width:46px;height:42px;padding:0;z-index:75;font-size:20px}
+body.game-running #gameChatButton{display:block}
+#gameChatButton.active{outline:2px solid #46d7ff}
+#gameChatBadge{position:absolute;right:-7px;top:-7px;min-width:20px;height:20px;padding:2px 5px;border-radius:999px;background:#ff566f;color:#fff;font-size:10px;line-height:16px}
+.chat-title-row{display:flex;align-items:center;gap:8px}
+.chat-title-row h3{margin:0;flex:1}
+#gameChatClose{padding:3px 7px;font-size:12px}
+#chatPanel{left:10px!important;right:auto!important;top:111px!important;width:min(350px,calc(100vw - 20px));height:360px;transform-origin:top left;transition:opacity .16s ease,transform .16s ease;z-index:74}
+#chatPanel.chat-window-closed{display:flex!important;opacity:0;pointer-events:none;transform:translateY(-8px) scale(.97)}
+#chatPanel.chat-window-open{display:flex!important;opacity:1;pointer-events:auto;transform:none}
+#chatHideBtn,#chatUnreadBadge{display:none!important}
+body:not(.game-running) #gameChatButton,body:not(.game-running) #chatPanel{display:none!important}
+@media(max-width:800px),(pointer:coarse){
+ #gameChatButton{top:max(57px,env(safe-area-inset-top));left:8px;width:42px;height:40px;font-size:18px}
+ #chatPanel{top:105px!important;left:8px!important;right:8px!important;width:auto!important;height:min(390px,55vh)!important;bottom:auto!important;zoom:1!important}
+ #threeCameraHint{bottom:calc(clamp(112px,25vw,150px) + 20px);max-width:58vw;text-align:center}
+ body.mode-3d #ddgMinimap{display:none!important}
+}

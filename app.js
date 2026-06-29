@@ -9,7 +9,8 @@ const MODES={
  create:{name:"Create Mode",desc:"Build, save, load, test, and share simple games.",world:[2600,1700]},
  platform:{name:"Platformer Chaos",desc:"A finished side-view building and drawing mode.",world:[4200,1500]},
  machine:{name:"Machine Game",desc:"Build working machines with wires and logic blocks.",world:[3600,2200]},
- meat:{name:"MEAT",desc:"Survive ten yellow triangle hunters inside a gigantic maze.",world:[5200,3600]}
+ meat:{name:"MEAT",desc:"Survive three yellow triangle hunters inside a gigantic maze.",world:[5000,3200]},
+ test3d:{name:"3D Test Zone",desc:"A blocky 3D movement and collision experiment.",world:[3000,2200]}
 };
 const FACE_ITEMS=[
  ["none","None",0],["happy","Happy",0],["silly","Silly",0],["angry","Angry",0],["sleepy","Sleepy",0],["cool","Cool",0],
@@ -25,6 +26,7 @@ const makeCode=(n=6)=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.f
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const inside=(p,r)=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
 function showScreen(id){
+ if(id!=="gameScreen")window.DDG_3D?.stop?.();
  for(const s of SCREENS)$(s).classList.toggle("active",s===id);
  document.body.classList.remove("mobile-ui-open");
  window.dispatchEvent(new CustomEvent("ddg-screen-change",{detail:{screen:id}}));
@@ -268,6 +270,7 @@ window.DDG_MUTED=new Set();
 window.DDG_BRIDGE={
   net,
   getState:()=>state,
+  getMode:()=>state?.mode,
   getMe:()=>me,
   getKeys:()=>state?.keys,
   getJoy:()=>state?.joy,
@@ -380,6 +383,7 @@ $("redoBtn").onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
 function doAction(){
  if(!state||!me)return;
+ if(window.DDG_3D?.action?.(state.mode))return;
  if(window.DDG_GAMES66?.action?.(state.mode))return;
  if(state.mode==="warfare")fireWeapon();
  else if(state.mode==="create")state.creator.placing=!state.creator.placing;
