@@ -99,6 +99,6 @@ function load(){try{const x=JSON.parse(localStorage.ddg_machine_v66||"{}");data.
 function network(type,p){if(type==="machine_sync"&&!B().getState().host){data.parts=p.parts||[];data.wires=p.wires||[]}}
 function setupMode(mode){if(mode==="machine"){B().getState().world={w:3600,h:2200};const me=B().getMe();me.x=300;me.y=300;document.querySelector("#machinePanel")?.classList.remove("hidden");load()}}
 function wireBridge(){const b=B();if(!b)return setTimeout(wireBridge,100);const old=window.DDG_GAMES66?.setup;window.DDG_GAMES66.setup=(mode)=>{old?.(mode);setupMode(mode)}}
-window.DDG_MACHINE={pointerDown,drawWorld,drawForeground,network};
+window.DDG_MACHINE={pointerDown,drawWorld,drawForeground,network,getRenderData:()=>data};
 addEventListener("DOMContentLoaded",()=>{setup();wireBridge()});
 })();

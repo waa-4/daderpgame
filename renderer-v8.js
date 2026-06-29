@@ -107,7 +107,7 @@ function stateSignature(){
  return [
   d.mode,d.round?.mapIndex,d.creator?.objects?.length||0,d.teamBase?.red,d.teamBase?.blue,
   gd?.walls?.length||0,gd?.loot?.length||0,gd?.triangles?.length||0,gd?.userPlatforms?.length||0,
-  md?.parts?.length||0,md?.wires?.length||0
+  md?.parts?.length||0,md?.wires?.length||0,d.build3d?.blocks?.length||0
  ].join("|")
 }
 function rebuildDynamic(force=false){
@@ -126,7 +126,9 @@ function rebuildDynamic(force=false){
  }
  if(mode==="platform"&&gd)for(const p of [...(gd.platforms||[]),...(gd.userPlatforms||[])])addBox(dynamicGroup,p.x,650,p.w,80,26,0x50d4c9);
  const md=window.DDG_MACHINE?.getRenderData?.();
- if(mode==="machine"&&md)for(const p of md.parts||[])addBox(dynamicGroup,p.x-p.w/2,p.y-p.h/2,p.w,p.h,55,p.value?p.color:"#24313d")
+ if(mode==="machine"&&md)for(const p of md.parts||[])addBox(dynamicGroup,p.x-p.w/2,p.y-p.h/2,p.w,p.h,55,p.value?p.color:"#24313d");
+ const bd=d.build3d;
+ if(mode==="build3d"&&bd)for(const b of bd.blocks||[])addBox(dynamicGroup,b.x-b.size/2,b.z-b.size/2,b.size,b.size,b.size,b.color||"#46d7ff")
 }
 function rebuildDrawings(force=false){
  const now=performance.now(),strokes=B().get3DData().strokes||[];
@@ -164,13 +166,13 @@ function loop(){
 }
 function start(mode){
  currentMode=mode;document.body.classList.add("mode-3d");document.querySelector("#gameCanvas").style.visibility="hidden";
- document.querySelector("#threeHost").setAttribute("aria-hidden","false");document.querySelector("#threeCameraHint").classList.remove("hidden");
+ document.querySelector("#threeHost").setAttribute("aria-hidden","false");
  jumpHeight=0;verticalVelocity=0;onGround=true;lastStateSig="";lastDrawSig="";init();rebuildDynamic(true);rebuildDrawings(true)
 }
 function stop(){
  if(!active&&!document.body.classList.contains("mode-3d"))return;
  active=false;cancelAnimationFrame(raf);document.body.classList.remove("mode-3d");document.querySelector("#gameCanvas")?.style.removeProperty("visibility");
- document.querySelector("#threeHost")?.setAttribute("aria-hidden","true");document.querySelector("#threeCameraHint")?.classList.add("hidden");
+ document.querySelector("#threeHost")?.setAttribute("aria-hidden","true");
  for(const [id,m] of [...playerMeshes])removePlayer(id,m);
  clearGroup(staticGroup);clearGroup(dynamicGroup);clearGroup(drawingGroup);
  try{renderer?.renderLists?.dispose?.();renderer?.dispose?.();renderer?.forceContextLoss?.()}catch{}
