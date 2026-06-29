@@ -1,44 +1,24 @@
-# DaDerpGame v7.0 — 3D Test Zone
+# DaDerpGame v7.1 — Input & 3D Camera Fix
 
-This version is based on the uploaded current repository.
+## Fixed in every game
 
-## 3D Test Zone
+Right-clicking while moving could cause a movement key to remain held because the browser context menu interrupted the normal key-release event.
 
-The new test mode includes:
+The game now:
 
-- A real 3D ground plane
-- 3D walls and colored blocks
-- Collision against walls and blocks
-- Simple 3D cube players
-- Online player position synchronization through the existing room system
-- Angled follow camera
-- Drag-to-rotate camera
-- Mouse-wheel and two-finger zoom
-- Existing desktop movement and mobile joystick support
-- Normal HTML menus and UI layered over the 3D scene
+- Prevents the browser context menu during gameplay
+- Clears held keyboard and joystick input on right-click
+- Clears input when the window loses focus
+- Clears input when the tab becomes hidden
+- Clears input after pointer cancellation
 
-The 3D mode is intentionally isolated. Existing 2D modes are not converted or rewritten.
+## 3D improvements
 
-## Chat redesign
-
-Chat is now opened through a top-left button while playing.
-
-- Compact Roblox-like chat window
-- Unread badge while closed
-- Close button
-- Tap outside to close
-- Enter opens chat on desktop
-- Escape closes chat
-- The same button works over both 2D and 3D games
-- Existing censoring, quick chat, muting, and chat bubbles remain
-
-## New files
-
-- `renderer-3d.js`
-- `chat-v7.js`
-
-Three.js is loaded from jsDelivr. The 3D test therefore needs internet access, just like Supabase multiplayer.
-
-## Installation
+- The cube now rotates with the camera so its front remains aligned with the camera view.
+- Movement is properly camera-relative.
+- W/forward moves in the direction the camera is facing.
+- A/D move left and right relative to the camera.
+- Camera rotation immediately changes the movement direction.
+- Right-click no longer begins camera dragging or opens a context menu.
 
 Replace the repository root files with this version.

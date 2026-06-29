@@ -77,7 +77,11 @@ function init(){
 }
 function addEvents(){
  const c=renderer.domElement;
- c.addEventListener("pointerdown",e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)});
+ c.addEventListener("contextmenu",e=>e.preventDefault());
+ c.addEventListener("pointerdown",e=>{
+  if(e.button===2){e.preventDefault();return}
+  dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)
+ });
  c.addEventListener("pointermove",e=>{
   if(!dragging)return;
   yaw-=(e.clientX-lastX)*.006;pitch=clamp(pitch+(e.clientY-lastY)*.004,.35,1.18);lastX=e.clientX;lastY=e.clientY
@@ -107,6 +111,7 @@ function syncPlayers(){
  for(const p of st.players.values()){
   const m=playerMeshes.get(p.id)||makePlayerMesh(p);
   m.position.set(p.x,0,p.y);
+  m.rotation.y=yaw;
   const mat=m.children[0]?.material;if(mat?.color){tempColor.set(p.color||"#46d7ff");mat.color.lerp(tempColor,.25)}
   m.visible=p.alive!==false
  }
@@ -118,7 +123,12 @@ function getInput(){
  sx+=joy.x;sz+=joy.y;
  const len=Math.hypot(sx,sz);if(len>.05){sx/=len;sz/=len}
  const sin=Math.sin(yaw),cos=Math.cos(yaw);
- return{x:sx*cos+sz*sin,z:sz*cos-sx*sin,active:len>.05}
+ const forward=-sz;
+ return{
+  x:sx*cos+forward*sin,
+  z:-sx*sin+forward*cos,
+  active:len>.05
+ }
 }
 function movePlayer(dt){
  const me=B().getMe();if(!me)return;

@@ -375,7 +375,30 @@ function renderPlayers(){if(!state)return;const d=$("playersList");d.innerHTML="
 function addMessage(name,text,color){const d=document.createElement("div");d.className="message";const b=document.createElement("b");b.textContent=name+": ";b.style.color=color||"#7bdcff";d.append(b,document.createTextNode(text));$("chatMessages").append(d);$("chatMessages").scrollTop=1e9}
 function sendChat(v){v=censor(v).trim().slice(0,160);if(!v)return;if(me){me.msg=v;me.msgUntil=Date.now()+3500}net.send("chat",{name:me.name,text:v,color:me.color});$("chatInput").value=""}$("sendChatBtn").onclick=()=>sendChat($("chatInput").value);$("chatInput").onkeydown=e=>{if(e.key==="Enter"){e.stopPropagation();sendChat(e.target.value)}};document.querySelectorAll("[data-quick]").forEach(b=>b.onclick=()=>sendChat(b.dataset.quick));
 
-addEventListener("keydown",e=>{if(document.activeElement===$("chatInput")||!state)return;const k=e.key.toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){state.keys.add(k);state.afkSince=Date.now();e.preventDefault()}if(k===" ")doAction()});addEventListener("keyup",e=>state?.keys.delete(e.key.toLowerCase()));addEventListener("blur",()=>state?.keys.clear());
+addEventListener("keydown",e=>{
+ if(document.activeElement===$("chatInput")||!state)return;
+ const k=e.key.toLowerCase();
+ if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
+  state.keys.add(k);state.afkSince=Date.now();e.preventDefault()
+ }
+ if(k===" ")doAction()
+});
+addEventListener("keyup",e=>state?.keys.delete(e.key.toLowerCase()));
+const clearHeldInput=()=>{
+ if(!state)return;
+ state.keys.clear();
+ state.joy.x=0;state.joy.y=0;
+};
+addEventListener("blur",clearHeldInput);
+addEventListener("mouseup",e=>{if(e.button===2)clearHeldInput()});
+addEventListener("pointercancel",clearHeldInput);
+addEventListener("contextmenu",e=>{
+ if(document.querySelector("#gameScreen")?.classList.contains("active")){
+  e.preventDefault();
+  clearHeldInput();
+ }
+});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)clearHeldInput()});
 function setupJoystick(){const base=$("mobileJoystick"),stick=$("mobileStick");let id=null;const reset=()=>{id=null;if(state){state.joy.x=0;state.joy.y=0}stick.style.transform=""};function mv(x,y){if(!state)return;const r=base.getBoundingClientRect(),m=r.width*.29;let dx=x-r.left-r.width/2,dy=y-r.top-r.height/2,l=Math.hypot(dx,dy)||1;if(l>m){dx=dx/l*m;dy=dy/l*m}state.joy.x=dx/m;state.joy.y=dy/m;stick.style.transform=`translate(${dx}px,${dy}px)`}base.onpointerdown=e=>{e.preventDefault();if(state)state.afkSince=Date.now();id=e.pointerId;base.setPointerCapture?.(id);mv(e.clientX,e.clientY)};base.onpointermove=e=>{if(e.pointerId===id){e.preventDefault();mv(e.clientX,e.clientY)}};base.onpointerup=base.onpointercancel=reset}setupJoystick();
 
 function toggleDraw(){state.draw=!state.draw;$("drawBtn").textContent="Draw: "+(state.draw?"ON":"OFF");$("mobileAltBtn").textContent=state.draw?"MOVE":"DRAW"}$("drawBtn").onclick=$("mobileAltBtn").onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};$("undoBtn").onclick=()=>{const id=state?.mine.pop();if(!id)return toast("Nothing to undo");const stroke=state.strokes.find(s=>s.id===id);if(stroke)state.redo.push(stroke);state.strokes=state.strokes.filter(s=>s.id!==id);net.send("undo",{strokeId:id})};
