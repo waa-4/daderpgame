@@ -3,7 +3,7 @@
 const B=()=>window.DDG_BRIDGE;
 let active=false,scene,camera,renderer,clock,host,raf=0;
 let yaw=.72,pitch=.78,distance=540,verticalVelocity=0,jumpHeight=0,onGround=true,currentMode="";
-let dragging=false,lastX=0,lastY=0,pinchDistance=0,lastDynamicBuild=0,lastDrawingBuild=0,lastStateSig="",lastDrawSig="";
+let dragging=false,lastX=0,lastY=0,pinchDistance=0,lastDynamicBuild=0,lastDrawingBuild=0,lastStateSig="",lastDrawSig="",drawing=false,lastDrawPoint=null,lastDrawAt=0;
 const playerMeshes=new Map();
 const staticGroup=new THREE.Group(),dynamicGroup=new THREE.Group(),drawingGroup=new THREE.Group();
 const geomCache=new Map(),matCache=new Map();
@@ -13,6 +13,35 @@ function isFirstPerson(){return distance<=82}
 function transformInput(x,y){
  const forward=-y,s=Math.sin(yaw),c=Math.cos(yaw);
  return{x:-x*c+forward*s,y:x*s+forward*c}
+}
+function rayToGround(clientX,clientY){
+ if(!renderer||!camera)return null;
+ const rect=renderer.domElement.getBoundingClientRect();
+ const mouse=new THREE.Vector2(((clientX-rect.left)/rect.width)*2-1,-((clientY-rect.top)/rect.height)*2+1);
+ const ray=new THREE.Raycaster();ray.setFromCamera(mouse,camera);
+ const point=new THREE.Vector3();
+ if(!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),point))return null;
+ return{x:point.x,y:point.z}
+}
+function solidRects(mode){
+ const d=B()?.get3DData?.()||{},world=d.world||{w:3000,h:2200},rects=[];
+ const t=45;
+ rects.push({x:0,y:0,w:world.w,h:t},{x:0,y:world.h-t,w:world.w,h:t},{x:0,y:0,w:t,h:world.h},{x:world.w-t,y:0,w:t,h:world.h});
+ if(mode==="evil")rects.push(...(d.evilWalls||[]));
+ if(mode==="create")for(const o of d.creator?.objects||[])if(o.type==="block")rects.push({x:o.x-o.w/2,y:o.y-o.h/2,w:o.w,h:o.h});
+ if(mode==="build3d")for(const b of d.build3d?.blocks||[])rects.push({x:b.x-b.size/2,y:b.z-b.size/2,w:b.size,h:b.size});
+ const gd=window.DDG_GAMES66?.getRenderData?.();
+ if(mode==="meat"&&gd){
+  rects.push(...(gd.walls||[]));
+  for(const l of gd.loot||[])if(!l.carriedBy)rects.push({x:l.x-25,y:l.y-25,w:50,h:50});
+ }
+ return rects
+}
+function collision(mode,use3d,nx,ny){
+ if(!use3d)return null;
+ const me=B()?.getMe?.();if(!me)return null;
+ const pad=22,blocked=solidRects(mode).some(r=>nx+pad>r.x&&nx-pad<r.x+r.w&&ny+pad>r.y&&ny-pad<r.y+r.h);
+ return blocked?{x:me.x,y:me.y}:{x:nx,y:ny}
 }
 function cachedGeometry(w,h,d){
  const key=`${Math.round(w)}|${Math.round(h)}|${Math.round(d)}`;
@@ -68,9 +97,29 @@ function init(){
 function addEvents(){
  const c=renderer.domElement;
  c.addEventListener("contextmenu",e=>e.preventDefault());
- c.addEventListener("pointerdown",e=>{if(e.button===2)return;dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)});
- c.addEventListener("pointermove",e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;pitch=clamp(pitch+(e.clientY-lastY)*.004,.28,1.2);lastX=e.clientX;lastY=e.clientY});
- c.addEventListener("pointerup",()=>dragging=false);c.addEventListener("pointercancel",()=>dragging=false);c.addEventListener("pointerleave",()=>dragging=false);
+ c.addEventListener("pointerdown",e=>{
+  if(e.button===2)return;
+  const st=B()?.getState?.(),p=rayToGround(e.clientX,e.clientY);
+  if(st?.draw&&p){
+   drawing=true;lastDrawPoint=p;lastDrawAt=performance.now();c.setPointerCapture?.(e.pointerId);e.preventDefault();return
+  }
+  if(currentMode==="build3d"&&p&&window.DDG_BUILD3D?.placeAt?.(p.x,p.y)){
+   c.setPointerCapture?.(e.pointerId);e.preventDefault();return
+  }
+  dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)
+ });
+ c.addEventListener("pointermove",e=>{
+  if(drawing){
+   const now=performance.now();if(now-lastDrawAt<24)return;
+   const p=rayToGround(e.clientX,e.clientY);if(!p||!lastDrawPoint)return;
+   const stroke={id:crypto.randomUUID(),owner:B().getMe()?.id,x1:lastDrawPoint.x,y1:lastDrawPoint.y,x2:p.x,y2:p.y,color:document.querySelector("#brushColor")?.value||"#ff4fc3",size:7};
+   B().addDrawingStroke?.(stroke);lastDrawPoint=p;lastDrawAt=now;return
+  }
+  if(!dragging)return;
+  yaw-=(e.clientX-lastX)*.006;pitch=clamp(pitch+(e.clientY-lastY)*.004,.28,1.2);lastX=e.clientX;lastY=e.clientY
+ });
+ const endPointer=()=>{dragging=false;drawing=false;lastDrawPoint=null};
+ c.addEventListener("pointerup",endPointer);c.addEventListener("pointercancel",endPointer);c.addEventListener("pointerleave",endPointer);
  c.addEventListener("wheel",e=>{distance=clamp(distance+e.deltaY*.5,35,950);e.preventDefault()},{passive:false});
  c.addEventListener("touchstart",e=>{if(e.touches.length===2)pinchDistance=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)},{passive:true});
  c.addEventListener("touchmove",e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);distance=clamp(distance+(pinchDistance-d)*1.25,35,950);pinchDistance=d}},{passive:true});
@@ -155,12 +204,18 @@ function updateMovingObjects(){
 function updateCamera(){
  const me=B().getMe();if(!me)return;
  let py=22+jumpHeight,z=me.y;if(currentMode==="platform"){py=Math.max(22,1242-me.y);z=700}
+ if(B().getState()?.draw){
+  camera.position.set(me.x,Math.max(720,distance*1.2),z+1);
+  camera.lookAt(me.x,0,z);
+  return
+ }
  const f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
  if(isFirstPerson()){camera.position.set(me.x,py+18,z);camera.lookAt(me.x+f.x*250,py+12,z+f.z*250)}
  else{const h=Math.cos(pitch)*distance,v=Math.sin(pitch)*distance;camera.position.set(me.x-Math.sin(yaw)*h,py+v,z-Math.cos(yaw)*h);camera.lookAt(me.x,py,z)}
 }
 function loop(){
  if(!active)return;
+ document.body.classList.toggle("draw-mode",!!B().getState()?.draw);
  const dt=Math.min(.04,clock.getDelta());verticalVelocity-=900*dt;jumpHeight+=verticalVelocity*dt;if(jumpHeight<=0){jumpHeight=0;verticalVelocity=0;onGround=true}
  rebuildDynamic();rebuildDrawings();updateMovingObjects();syncPlayers();updateCamera();renderer.render(scene,camera);raf=requestAnimationFrame(loop)
 }
@@ -180,5 +235,5 @@ function stop(){
 }
 function jump(mode,use3d){if(!use3d)return false;if(onGround){verticalVelocity=430;onGround=false}return true}
 function action(){return false}
-window.DDG_3D={setup,start,stop,jump,action,transformInput,isFirstPerson};
+window.DDG_3D={setup,start,stop,jump,action,transformInput,isFirstPerson,collision,solidRects};
 })();
