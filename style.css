@@ -223,3 +223,6 @@ body:not(.game-running) #gameChatButton,body:not(.game-running) #chatPanel{displ
 .play-3d{background:#218b56!important;border-color:#62d493!important;font-weight:800}
 .play-2d:hover{background:#2386d8!important}.play-3d:hover{background:#2ba968!important}
 body.mode-3d #threeCameraHint::after{content:" • Zoom fully in for first person"}
+
+body.mode-3d.low-performance #ddgMinimap{display:none!important}
+body.mode-3d.low-performance #threeCameraHint{opacity:.65}
