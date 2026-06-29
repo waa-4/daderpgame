@@ -63,7 +63,8 @@ function getInput(){
  const k=B().getKeys(),j=B().getJoy();let x=0,y=0;
  if(k.has("a")||k.has("arrowleft"))x--;if(k.has("d")||k.has("arrowright"))x++;
  if(k.has("w")||k.has("arrowup"))y--;if(k.has("s")||k.has("arrowdown"))y++;
- x+=j.x;y+=j.y;const l=Math.hypot(x,y)||1;return{x:x/l,y:y/l,active:Math.abs(x)+Math.abs(y)>.08};
+ x+=j.x;y+=j.y;if(B().is3D?.()){const v=window.DDG_3D?.transformInput?.(x,y);if(v){x=v.x;y=v.y}}
+ const l=Math.hypot(x,y)||1;return{x:x/l,y:y/l,active:Math.abs(x)+Math.abs(y)>.08};
 }
 function barricadeRect(l){return{x:l.x-25,y:l.y-25,w:50,h:50}}
 function updateMeat(dt){
@@ -177,6 +178,6 @@ function wire(){
  b.net.on("platform_add",p=>{if(data.mode==="platform"&&!data.userPlatforms.some(x=>x.id===p.platform.id))data.userPlatforms.push(p.platform)});
  b.net.on("platform_snapshot",p=>{if(p.target&&p.target!==b.getMe()?.id)return;if(data.mode==="platform")data.userPlatforms=p.platforms||[]})
 }
-window.DDG_GAMES66={setup,update,action,pointerDown,collision,drawBackground,drawWorld,drawForeground,network,sendSnapshot,solidRects,onPlayerHello:()=>{}};
+window.DDG_GAMES66={setup,update,action,pointerDown,collision,drawBackground,drawWorld,drawForeground,network,sendSnapshot,solidRects,getRenderData:()=>data,onPlayerHello:()=>{}};
 wire();
 })();
