@@ -3,7 +3,7 @@
 const B=()=>window.DDG_BRIDGE;
 let scene,camera,renderer,clock,host,active=false,raf=0;
 let yaw=.65,pitch=.72,distance=520,cameraMode="third",jumpY=0,vy=0,onGround=true;
-let dragging=false,lastX=0,lastY=0;
+let dragging=false,lastX=0,lastY=0,pointerMoved=false;
 const staticGroup=new THREE.Group(),dynamicGroup=new THREE.Group(),fxGroup=new THREE.Group();
 const playerMeshes=new Map(),geomCache=new Map(),matCache=new Map();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -29,7 +29,14 @@ function setup(mode){
 }
 function start(mode){stop();firstFrame=true;host=document.querySelector('#threeHost');host.innerHTML='';renderer=new THREE.WebGLRenderer({antialias:!window.DDG_SYSTEMS?.settings.lowPerformance,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,window.DDG_SYSTEMS?.settings.lowPerformance?1:1.2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.domElement.id='threeCanvas';host.append(renderer.domElement);scene=new THREE.Scene();scene.background=new THREE.Color(0x91cae7);scene.fog=new THREE.Fog(0x91cae7,1800,5200);camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.5,9000);clock=new THREE.Clock();scene.add(new THREE.HemisphereLight(0xf0fbff,0x554d3b,1.8));const sun=new THREE.DirectionalLight(0xffffff,1.25);sun.position.set(-800,1300,-600);scene.add(sun);scene.add(staticGroup,dynamicGroup,fxGroup);buildBase();addEvents();active=true;document.body.classList.add('mode-3d');loop()}
 function buildBase(){clear(staticGroup);const st=B().getState(),w=st.world.w,h=st.world.h;const ground=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat(0x6aa268));ground.rotation.x=-Math.PI/2;ground.position.set(w/2,0,h/2);staticGroup.add(ground);const grid=new THREE.GridHelper(Math.max(w,h),Math.max(12,Math.round(Math.max(w,h)/160)),0x315f44,0x4f8a5f);grid.position.set(w/2,.6,h/2);staticGroup.add(grid);const t=45;box(staticGroup,0,0,w,t,150,0x33465d);box(staticGroup,0,h-t,w,t,150,0x33465d);box(staticGroup,0,0,t,h,150,0x33465d);box(staticGroup,w-t,0,t,h,150,0x33465d)}
-function addEvents(){const c=renderer.domElement;c.addEventListener('contextmenu',e=>e.preventDefault());c.addEventListener('pointerdown',e=>{if(e.button===2)return;dragging=true;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)});c.addEventListener('pointermove',e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;pitch=clamp(pitch+(e.clientY-lastY)*.004,.2,1.28);lastX=e.clientX;lastY=e.clientY});c.addEventListener('pointerup',()=>dragging=false);c.addEventListener('pointercancel',()=>dragging=false);c.addEventListener('wheel',e=>{distance=clamp(distance+e.deltaY*.45,70,900);if(distance<95)cameraMode='first';else if(cameraMode==='first'&&distance>130)cameraMode='third';e.preventDefault()},{passive:false});addEventListener('resize',()=>{if(!active)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})}
+function groundPoint(clientX,clientY){
+ const rect=renderer.domElement.getBoundingClientRect();
+ const mouse=new THREE.Vector2(((clientX-rect.left)/rect.width)*2-1,-((clientY-rect.top)/rect.height)*2+1);
+ const ray=new THREE.Raycaster();ray.setFromCamera(mouse,camera);
+ const p=new THREE.Vector3();
+ return ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),p)?{x:p.x,y:p.z}:null
+}
+function addEvents(){const c=renderer.domElement;c.addEventListener('contextmenu',e=>e.preventDefault());c.addEventListener('pointerdown',e=>{if(e.button===2)return;dragging=true;pointerMoved=false;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)});c.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)pointerMoved=true;yaw-=dx*.006;pitch=clamp(pitch+dy*.004,.2,1.28);lastX=e.clientX;lastY=e.clientY});c.addEventListener('pointerup',e=>{if(!pointerMoved){const p=groundPoint(e.clientX,e.clientY);if(p)window.DDG_GAMES3D?.pointerGround?.(B().getMode(),p.x,p.y)}dragging=false});c.addEventListener('pointercancel',()=>dragging=false);c.addEventListener('wheel',e=>{distance=clamp(distance+e.deltaY*.45,70,900);if(distance<95)cameraMode='first';else if(cameraMode==='first'&&distance>130)cameraMode='third';e.preventDefault()},{passive:false});addEventListener('resize',()=>{if(!active)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})}
 function playerMesh(p){const g=new THREE.Group(),body=new THREE.Mesh(geom(42,42,42),new THREE.MeshLambertMaterial({color:p.color||'#46d7ff'}));body.position.y=21;g.add(body);const eye=mat(0x111827);for(const x of [-8,8]){const e=new THREE.Mesh(geom(5,6,2),eye);e.position.set(x,25,-21.2);g.add(e)}scene.add(g);playerMeshes.set(p.id,g);return g}
 function syncPlayers(){const st=B().getState(),me=B().getMe(),ids=new Set(st.players.keys());for(const [id,m] of [...playerMeshes])if(!ids.has(id)){scene.remove(m);playerMeshes.delete(id)}for(const p of st.players.values()){const g=playerMeshes.get(p.id)||playerMesh(p);g.position.set(p.x,p.id===me.id?jumpY:0,p.y);g.rotation.y=yaw+Math.PI;g.children[0].material.color.set(p.color||'#46d7ff');g.visible=p.id!==me.id||cameraMode!=='first'}}
 function updateCamera(){const me=B().getMe();if(!me)return;const py=22+jumpY,f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));if(cameraMode==='first'){camera.position.set(me.x,py+18,me.y);camera.lookAt(me.x+f.x*250,py+12,me.y+f.z*250)}else{const h=Math.cos(pitch)*distance,v=Math.sin(pitch)*distance;camera.position.set(me.x-Math.sin(yaw)*h,py+v,me.y-Math.cos(yaw)*h);camera.lookAt(me.x,py,me.y)}}
@@ -47,5 +54,5 @@ function stop(){
   return
  }
  active=false;cancelAnimationFrame(raf);document.body.classList.remove('mode-3d');for(const m of playerMeshes.values())scene.remove(m);playerMeshes.clear();clear(staticGroup);clear(dynamicGroup);clear(fxGroup);try{renderer.renderLists.dispose();renderer.dispose();renderer.forceContextLoss()}catch{}if(host)host.innerHTML=''}
-window.DDG_CORE3D={setup,start,stop,jump,transformInput,collision,getCameraMode,cycleCamera};
+window.DDG_CORE3D={setup,start,stop,jump,transformInput,collision,getCameraMode,cycleCamera,groundPoint};
 })();

@@ -25,9 +25,9 @@ function setup(){
 function setMode(m){data.mode=m;data.wireStart=null;status(m[0].toUpperCase()+m.slice(1)+" mode")}
 function status(t){const e=document.querySelector("#machineStatus");if(e)e.textContent=t}
 function sync(){B()?.net?.send("machine_sync",{parts:data.parts,wires:data.wires})}
-function pointerDown(mode,e){
- if(mode!=="machine")return false;
- const p=B().screenToWorld(e.clientX,e.clientY),found=[...data.parts].reverse().find(x=>hit(x,p.x,p.y));
+function pointerAt(x,y){
+ if(B().getMode()!=="machine")return false;
+ const p={x,y},found=[...data.parts].reverse().find(q=>hit(q,p.x,p.y));
  if(data.mode==="place"){
   const type=document.querySelector("#machinePart").value,color=document.querySelector("#machineColor").value;
   data.parts.push({id:crypto.randomUUID(),type,x:Math.round(p.x/40)*40,y:Math.round(p.y/40)*40,w:type==="block"||type==="door"?100:64,h:64,color,on:false,value:0,phase:0});
@@ -48,6 +48,11 @@ function pointerDown(mode,e){
   return true;
  }
  return true;
+}
+function pointerDown(mode,e){
+ if(mode!=="machine")return false;
+ const p=B().screenToWorld(e.clientX,e.clientY);
+ return pointerAt(p.x,p.y)
 }
 function inputValues(part){
  return data.wires.filter(w=>w.b===part.id).map(w=>data.parts.find(p=>p.id===w.a)?.value||0);
@@ -99,6 +104,6 @@ function load(){try{const x=JSON.parse(localStorage.ddg_machine_v66||"{}");data.
 function network(type,p){if(type==="machine_sync"&&!B().getState().host){data.parts=p.parts||[];data.wires=p.wires||[]}}
 function setupMode(mode){if(mode==="machine"){B().getState().world={w:3600,h:2200};const me=B().getMe();me.x=300;me.y=300;document.querySelector("#machinePanel")?.classList.remove("hidden");load()}}
 function wireBridge(){const b=B();if(!b)return setTimeout(wireBridge,100);const old=window.DDG_GAMES66?.setup;window.DDG_GAMES66.setup=(mode)=>{old?.(mode);setupMode(mode)}}
-window.DDG_MACHINE={pointerDown,drawWorld,drawForeground,network,getRenderData:()=>data};
+window.DDG_MACHINE={pointerDown,pointerAt,drawWorld,drawForeground,network,getRenderData:()=>data};
 addEventListener("DOMContentLoaded",()=>{setup();wireBridge()});
 })();

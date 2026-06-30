@@ -134,10 +134,15 @@ function action(mode){
  if(mode==="platform"){if(data.onGround){data.vy=-520;data.onGround=false}return true}
  return false;
 }
+function placePlatformAt(x,y){
+ if(data.mode!=="platform"||!data.buildMode)return false;
+ const plat={id:crypto.randomUUID(),x:Math.round(x/40)*40-70,y:Math.round(y/40)*40,w:140,h:24};
+ data.userPlatforms.push(plat);B().net.send("platform_add",{platform:plat});return true
+}
 function pointerDown(mode,e){
- if(mode==="platform"&&data.buildMode){
-  const p=B().screenToWorld(e.clientX,e.clientY),plat={id:crypto.randomUUID(),x:Math.round(p.x/40)*40-70,y:Math.round(p.y/40)*40,w:140,h:24};
-  data.userPlatforms.push(plat);B().net.send("platform_add",{platform:plat});return true;
+ if(mode==="platform"){
+  const p=B().screenToWorld(e.clientX,e.clientY);
+  return placePlatformAt(p.x,p.y)
  }
  return false;
 }
@@ -178,6 +183,6 @@ function wire(){
  b.net.on("platform_add",p=>{if(data.mode==="platform"&&!data.userPlatforms.some(x=>x.id===p.platform.id))data.userPlatforms.push(p.platform)});
  b.net.on("platform_snapshot",p=>{if(p.target&&p.target!==b.getMe()?.id)return;if(data.mode==="platform")data.userPlatforms=p.platforms||[]})
 }
-window.DDG_GAMES66={setup,update,action,pointerDown,collision,drawBackground,drawWorld,drawForeground,network,sendSnapshot,solidRects,getRenderData:()=>data,onPlayerHello:()=>{}};
+window.DDG_GAMES66={setup,update,action,pointerDown,placePlatformAt,collision,drawBackground,drawWorld,drawForeground,network,sendSnapshot,solidRects,getRenderData:()=>data,onPlayerHello:()=>{}};
 wire();
 })();

@@ -261,3 +261,5 @@ body.mode-3d #ddgMinimap{display:none!important}
 
 #threeCanvas{cursor:default!important}
 #threeCanvas:active{cursor:default!important}
+
+.deferred-note{position:absolute;right:13px;top:13px;font-size:10px;color:#ffe39a;background:#201a0d;border:1px solid #69592b;border-radius:999px;padding:4px 7px}

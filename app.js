@@ -290,6 +290,9 @@ window.DDG_BRIDGE={
   getWorld:()=>state?.world,
   getMode:()=>state?.mode,
   getPlayers:()=>state?.players,
+  getHealth:()=>state?.health,
+  getTeams:()=>state?.teams,
+  getProjectiles:()=>state?.projectiles,
   getCanvas:()=>canvas,
   earn:(n,why)=>earn(n,why),
   drawCube:(c,x,y,size,p)=>drawCube(c,x,y,size,p),
@@ -518,7 +521,7 @@ function update(dt){
  if(!handled){
   let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}
  if(state.render3d){const v=window.DDG_CORE3D?.transformInput?.(dx,dy);if(v){dx=v.x;dy=v.y}}
- const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280;if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
+ const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280*(state.speedBoost||1);if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
  }
  for(const[id,t]of state.targets){const p=state.players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}if(performance.now()-state.lastMove>(C.MOVE_INTERVAL||90)){net.send("move",{id:me.id,x:me.x,y:me.y});state.lastMove=performance.now()}
  const vw=visualViewport?.width||innerWidth,vh=visualViewport?.height||innerHeight;state.cam.x=me.x-vw/2;state.cam.y=me.y-vh/2;
