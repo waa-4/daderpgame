@@ -268,3 +268,11 @@ body.mode-3d #ddgMinimap{display:none!important}
 #cosmeticStatus,#paintStatus{font-size:12px;color:var(--muted);background:#081321;border-radius:8px;padding:8px}
 body.paint-active #threeCanvas{cursor:crosshair!important}
 @media(max-width:800px),(pointer:coarse){#cosmeticPanel,#paintPanel{display:none}.mobile-active-panel#cosmeticPanel,.mobile-active-panel#paintPanel{display:flex!important}}
+
+#deployVersionBadge{
+ position:fixed;right:10px;bottom:10px;z-index:99999;
+ padding:7px 10px;border-radius:999px;
+ background:#07131f;color:#62e4ff;border:1px solid #2c8fa4;
+ font:700 12px/1 system-ui,sans-serif;box-shadow:0 4px 20px #0008;
+ pointer-events:none
+}
