@@ -42,7 +42,7 @@ function syncPlayers(){const st=B().getState(),me=B().getMe(),ids=new Set(st.pla
 function updateCamera(){const me=B().getMe();if(!me)return;const py=22+jumpY,f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));if(cameraMode==='first'){camera.position.set(me.x,py+18,me.y);camera.lookAt(me.x+f.x*250,py+12,me.y+f.z*250)}else{const h=Math.cos(pitch)*distance,v=Math.sin(pitch)*distance;camera.position.set(me.x-Math.sin(yaw)*h,py+v,me.y-Math.cos(yaw)*h);camera.lookAt(me.x,py,me.y)}}
 function collision(mode,nx,ny){const st=B().getState(),me=B().getMe(),r=22,rects=[{x:0,y:0,w:st.world.w,h:45},{x:0,y:st.world.h-45,w:st.world.w,h:45},{x:0,y:0,w:45,h:st.world.h},{x:st.world.w-45,y:0,w:45,h:st.world.h},...(window.DDG_GAMES3D?.solidRects?.(mode)||[])];return rects.some(o=>nx+r>o.x&&nx-r<o.x+o.w&&ny+r>o.y&&ny-r<o.y+o.h)?{x:me.x,y:me.y}:{x:nx,y:ny}}
 let firstFrame=true;
-function loop(){if(!active)return;const dt=Math.min(.04,clock.getDelta());vy-=900*dt;jumpY+=vy*dt;if(jumpY<=0){jumpY=0;vy=0;onGround=true}clear(dynamicGroup);clear(fxGroup);window.DDG_GAMES3D?.render?.(dynamicGroup,fxGroup,{box,geom,mat,THREE});syncPlayers();updateCamera();renderer.render(scene,camera);
+function loop(){if(!active)return;const dt=Math.min(.04,clock.getDelta());vy-=900*dt;jumpY+=vy*dt;if(jumpY<=0){jumpY=0;vy=0;onGround=true}clear(dynamicGroup);clear(fxGroup);window.DDG_GAMES3D?.render?.(dynamicGroup,fxGroup,{box,geom,mat,THREE});window.DDG_AVATAR_PAINT?.renderPaint?.(fxGroup,{THREE});syncPlayers();updateCamera();renderer.render(scene,camera);
  if(firstFrame){
   firstFrame=false;
   document.querySelector("#gameLoadingOverlay")?.classList.add("hidden");

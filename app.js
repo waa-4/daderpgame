@@ -293,6 +293,7 @@ window.DDG_BRIDGE={
   getHealth:()=>state?.health,
   getTeams:()=>state?.teams,
   getProjectiles:()=>state?.projectiles,
+  getNet:()=>net,
   getCanvas:()=>canvas,
   earn:(n,why)=>earn(n,why),
   drawCube:(c,x,y,size,p)=>drawCube(c,x,y,size,p),
@@ -386,6 +387,8 @@ net.on("creator_sync",p=>{if(!state.host)state.creator.objects=p.objects||[]});
 net.on("machine_sync",p=>window.DDG_MACHINE?.network?.("machine_sync",p));
 net.on("machine_event",p=>window.DDG_MACHINE?.network?.("machine_event",p));
 net.on("v91_event",p=>window.DDG_GAMES3D?.network?.(p));
+net.on("avatar_v92",p=>window.DDG_AVATAR_PAINT?.networkAvatar?.(p));
+net.on("paint_v92",p=>window.DDG_AVATAR_PAINT?.networkPaint?.(p));
 net.on("build3d_sync",p=>window.DDG_BUILD3D?.network?.(p));
 net.on("request_snapshot",p=>{
  if(!state?.host)return;
