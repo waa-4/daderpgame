@@ -352,9 +352,10 @@ function setupModeUI(){
  $("createPanel").classList.toggle("hidden",state.mode!=="create");
  $("machinePanel")?.classList.toggle("hidden",state.mode!=="machine");
  $("build3dPanel")?.classList.toggle("hidden",state.mode!=="build3d");
- $("drawBtn").classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
- $("undoBtn").classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
- $("clearBtn").classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
+ $("drawBtn")?.classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
+ $("undoBtn")?.classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
+ $("redoBtn")?.classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
+ $("clearBtn")?.classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
  if(state.mode==="freedraw")state.draw=true;
  if(state.mode==="warfare"){assignTeam(me.id);state.health.set(me.id,100)}
  if(state.mode==="create")loadCreatorLocal();

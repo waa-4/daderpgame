@@ -1,10 +1,16 @@
-# DaDerpGame v9.1 — Full 3D Foundation + OG/Warfare
+# DaDerpGame v9.1.1 — 3D Loading Fix
 
-Combines the planned v9.0 foundation and v9.1 game upgrades.
+The black game screen was caused by a startup error before the 3D renderer ran.
 
-- Fully 3D gameplay launch flow.
-- Shared first/third-person camera, pitch, jumping, collision, and player rendering.
-- 3D drawing intentionally deferred until v9.5.
-- OG Derp restores speed zones, fling pads, and sandbox toys.
-- Cube Warfare has a new cover-heavy arena and visible bat/water/laser effects.
-- Existing HTML UI, chat, profiles, rooms, settings, and mobile controls remain.
+v9 removed the old drawing buttons from the HTML, but `setupModeUI()` still tried to access them directly. That threw an error and stopped the renderer from starting.
+
+## Fixed
+
+- Optional removed controls are now null-safe.
+- The 3D renderer can finish starting.
+- Added a visible loading screen.
+- The loading screen disappears after the first successful rendered frame.
+- A readable failure message appears if Three.js cannot start.
+- Existing v9.1 OG Derp and Cube Warfare features remain.
+
+Replace the repository root files with this version.

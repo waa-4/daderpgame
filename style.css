@@ -243,3 +243,18 @@ body.mode-3d.draw-mode #threeCanvas{cursor:crosshair}
 #threeHost{display:block!important}
 #cameraModeBtn{white-space:nowrap}
 body.mode-3d #ddgMinimap{display:none!important}
+
+#gameLoadingOverlay{
+ position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;
+ z-index:18;background:#08101d;color:#dff5ff;pointer-events:none
+}
+#gameLoadingOverlay.hidden{display:none}
+.loading-cube{
+ width:54px;height:54px;border-radius:10px;background:#46d7ff;
+ box-shadow:inset -10px -10px #0003;animation:ddg-loading-spin 1.15s linear infinite
+}
+@keyframes ddg-loading-spin{
+ from{transform:rotate(0deg) scale(.92)}
+ 50%{transform:rotate(180deg) scale(1.08)}
+ to{transform:rotate(360deg) scale(.92)}
+}
