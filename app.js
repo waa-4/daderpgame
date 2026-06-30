@@ -9,7 +9,6 @@ const MODES={
  create:{name:"Create Mode",desc:"Build, save, load, test, and share simple games.",world:[2600,1700]},
  platform:{name:"Platformer Chaos",desc:"A finished side-view building and drawing mode.",world:[4200,1500]},
  machine:{name:"Machine Game",desc:"Build working machines with wires and logic blocks.",world:[3600,2200]},
- build3d:{name:"3D Building",desc:"Place and remove blocks in a shared 3D sandbox.",world:[3200,2200]},
  meat:{name:"MEAT",desc:"Survive three yellow triangle hunters inside a gigantic maze.",world:[5000,3200]}
 };
 const FACE_ITEMS=[
@@ -26,7 +25,7 @@ const makeCode=(n=6)=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.f
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const inside=(p,r)=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
 function showScreen(id){
- if(id!=="gameScreen")window.DDG_3D?.stop?.();
+ if(id!=="gameScreen")window.DDG_CORE3D?.stop?.();
  for(const s of SCREENS)$(s).classList.toggle("active",s===id);
  document.body.classList.remove("mobile-ui-open");
  window.dispatchEvent(new CustomEvent("ddg-screen-change",{detail:{screen:id}}));
@@ -128,9 +127,9 @@ $("saveAvatarBtn").onclick=()=>{
 
 $("friendsBtn").onclick=()=>{renderFriends();$("friendsDialog").showModal()};$("myFriendCode").textContent=save.friendCode;$("copyFriendBtn").onclick=()=>navigator.clipboard?.writeText(save.friendCode);$("addFriendBtn").onclick=()=>{const f=$("friendCodeInput").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,10);if(f.length<5||f===save.friendCode)return;if(!save.friends.includes(f))save.friends.push(f);$("friendCodeInput").value="";persist();renderFriends()};function renderFriends(){const d=$("friendsList");d.innerHTML=save.friends.length?"":'<p class="muted">No friends yet.</p>';for(const f of save.friends){const r=document.createElement("div");r.className="friend-item";r.innerHTML=`<b>${f}</b><span class="muted">saved friend</span><button type="button">Remove</button>`;r.querySelector("button").onclick=()=>{save.friends=save.friends.filter(x=>x!==f);persist();renderFriends()};d.append(r)}}
 
-let selectedMode="og",selectedRender="2d";
+let selectedMode="og",selectedRender="3d";
 document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{
- selectedMode=b.dataset.mode;selectedRender=b.dataset.render||"2d";
+ selectedMode=b.dataset.mode;selectedRender="3d";
  $("roomModeTitle").textContent=`${MODES[selectedMode].name} — ${selectedRender.toUpperCase()}`;
  $("roomModeDescription").textContent=MODES[selectedMode].desc+(selectedRender==="3d"?" The same game rules rendered in 3D.":"");
  showScreen("roomScreen")
@@ -288,6 +287,9 @@ window.DDG_BRIDGE={
   getJoy:()=>state?.joy,
   getWorld:()=>state?.world,
   getContext:()=>ctx,
+  getWorld:()=>state?.world,
+  getMode:()=>state?.mode,
+  getPlayers:()=>state?.players,
   getCanvas:()=>canvas,
   earn:(n,why)=>earn(n,why),
   drawCube:(c,x,y,size,p)=>drawCube(c,x,y,size,p),
@@ -295,6 +297,11 @@ window.DDG_BRIDGE={
   clamp,
   getCreator:()=>state?.creator,
   syncCreator:()=>net.send("creator_sync",{objects:state?.creator?.objects||[]}),
+  addDrawingStroke:stroke=>{
+   if(!state||!me||!stroke)return;
+   state.strokes.push(stroke);state.mine.push(stroke.id);state.redo=[];
+   net.send("draw",stroke);
+  },
   screenToWorld:(x,y)=>({x:x+(state?.cam.x||0),y:y+(state?.cam.y||0)}),
   isHost:()=>!!state?.host,
   toast:t=>toast(t),
@@ -311,7 +318,7 @@ const maps={
   {name:"Purple Maze",bg:"#211832",walls:[{x:520,y:250,w:140,h:700},{x:980,y:600,w:700,h:120},{x:1900,y:240,w:130,h:760}]}
  ]
 };
-function newState(){const [w,h]=MODES[selectedMode].world;return{mode:selectedMode,render3d:selectedRender==="3d",world:{w,h},room:"",host:false,hostId:null,players:new Map(),targets:new Map(),keys:new Set(),joy:{x:0,y:0},cam:{x:0,y:0},strokes:[],mine:[],redo:[],draw:false,lastMove:0,lastDraw:0,lastFrame:performance.now(),afkSince:Date.now(),round:{phase:"lobby",time:15,number:0,evilId:null,mapIndex:0,alive:new Set(),winner:""},health:new Map(),teams:new Map(),teamBase:{red:500,blue:500},projectiles:[],cooldowns:{bat:0,laser:0,water:0},creator:{objects:[],placing:false,test:false},moduleData:{}}}
+function newState(){const [w,h]=MODES[selectedMode].world;return{mode:selectedMode,render3d:true,world:{w,h},room:"",host:false,hostId:null,players:new Map(),targets:new Map(),keys:new Set(),joy:{x:0,y:0},cam:{x:0,y:0},strokes:[],mine:[],redo:[],draw:false,lastMove:0,lastDraw:0,lastFrame:performance.now(),afkSince:Date.now(),round:{phase:"lobby",time:15,number:0,evilId:null,mapIndex:0,alive:new Set(),winner:""},health:new Map(),teams:new Map(),teamBase:{red:500,blue:500},projectiles:[],cooldowns:{bat:0,laser:0,water:0},creator:{objects:[],placing:false,test:false},moduleData:{}}}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.remove("show"),1800)}
 function resize(){const v=visualViewport||window,d=Math.min(devicePixelRatio||1,2),w=Math.round(v.width||innerWidth),h=Math.round(v.height||innerHeight);canvas.width=w*d;canvas.height=h*d;canvas.style.width=w+"px";canvas.style.height=h+"px";ctx.setTransform(d,0,0,d,0,0)}addEventListener("resize",resize);visualViewport?.addEventListener("resize",resize);resize();
 
@@ -332,6 +339,7 @@ $("fullscreenBtn").onclick=async()=>{
   }
  }catch{toast("Fullscreen is not available here")}
 };
+$("cameraModeBtn").onclick=()=>{const m=window.DDG_CORE3D?.cycleCamera?.()||"third";$("cameraModeBtn").textContent=`Camera: ${m==="first"?"First":"Third"}`};
 document.addEventListener("fullscreenchange",()=>{
  $("fullscreenBtn").textContent=document.fullscreenElement?"Exit Fullscreen":"Fullscreen";
 });
@@ -351,7 +359,8 @@ function setupModeUI(){
  if(state.mode==="warfare"){assignTeam(me.id);state.health.set(me.id,100)}
  if(state.mode==="create")loadCreatorLocal();
  window.DDG_GAMES66?.setup?.(state.mode);
- window.DDG_3D?.setup?.(state.mode,state.render3d);
+ window.DDG_GAMES3D?.setup?.(state.mode);
+ window.DDG_CORE3D?.setup?.(state.mode);
 }
 function assignTeam(id){const red=[...state.teams.values()].filter(x=>x==="red").length,blue=[...state.teams.values()].filter(x=>x==="blue").length;state.teams.set(id,red<=blue?"red":"blue")}
 net.on("connection",s=>{$("connectionLabel").className="pill "+s;$("connectionLabel").textContent=s});
@@ -372,6 +381,7 @@ net.on("war_hit",p=>applyDamage(p.target,p.damage,p.attacker,p.weapon));net.on("
 net.on("creator_sync",p=>{if(!state.host)state.creator.objects=p.objects||[]});
 net.on("machine_sync",p=>window.DDG_MACHINE?.network?.("machine_sync",p));
 net.on("machine_event",p=>window.DDG_MACHINE?.network?.("machine_event",p));
+net.on("v91_event",p=>window.DDG_GAMES3D?.network?.(p));
 net.on("build3d_sync",p=>window.DDG_BUILD3D?.network?.(p));
 net.on("request_snapshot",p=>{
  if(!state?.host)return;
@@ -396,7 +406,7 @@ addEventListener("keydown",e=>{
  if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
   state.keys.add(k);state.afkSince=Date.now();e.preventDefault()
  }
- if(k===" "){if(window.DDG_3D?.jump?.(state?.mode,state?.render3d)!==true)doAction();e.preventDefault()}
+ if(k===" "){if(window.DDG_CORE3D?.jump?.()!==true)doAction();e.preventDefault()}
 });
 addEventListener("keyup",e=>state?.keys.delete(e.key.toLowerCase()));
 const clearHeldInput=()=>{
@@ -414,11 +424,11 @@ function setupJoystick(){const base=$("mobileJoystick"),stick=$("mobileStick");l
 
 function toggleDraw(){state.draw=!state.draw;$("drawBtn").textContent="Draw: "+(state.draw?"ON":"OFF");$("mobileAltBtn").textContent=state.draw?"MOVE":"DRAW"}$("drawBtn").onclick=$("mobileAltBtn").onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};$("undoBtn").onclick=()=>{const id=state?.mine.pop();if(!id)return toast("Nothing to undo");const stroke=state.strokes.find(s=>s.id===id);if(stroke)state.redo.push(stroke);state.strokes=state.strokes.filter(s=>s.id!==id);net.send("undo",{strokeId:id})};
 $("redoBtn").onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast("Nothing to redo");state.strokes.push(stroke);state.mine.push(stroke.id);net.send("redo",{stroke})};$("clearBtn").onclick=()=>{if(!state?.host)return toast("Host only");state.strokes=[];net.send("clear",{})};$("actionBtn").onclick=$("mobileActionBtn").onclick=doAction;
-$("mobileJumpBtn").onclick=()=>{if(window.DDG_3D?.jump?.(state?.mode,state?.render3d)!==true)doAction()};
+$("mobileJumpBtn").onclick=()=>{if(window.DDG_CORE3D?.jump?.()!==true)doAction()};
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
 function doAction(){
  if(!state||!me)return;
- if(window.DDG_3D?.action?.(state.mode))return;
+ if(window.DDG_GAMES3D?.action?.(state.mode))return;
  if(window.DDG_GAMES66?.action?.(state.mode))return;
  if(state.mode==="warfare")fireWeapon();
  else if(state.mode==="create")state.creator.placing=!state.creator.placing;
@@ -476,6 +486,8 @@ function depenetratePlayer(){
  }
 }
 function collisionMove(nx,ny){
+ const threeResult=window.DDG_CORE3D?.collision?.(state?.mode,nx,ny);
+ if(threeResult)return threeResult;
  const moduleResult=window.DDG_GAMES66?.collision?.(state?.mode,nx,ny);
  if(moduleResult)return moduleResult;
  const p={x:nx,y:ny};let blocked=false;
@@ -486,10 +498,10 @@ function collisionMove(nx,ny){
 function update(dt){
  if(!state||!me)return;state.players.set(me.id,me);if(performance.now()-lastEarn>30000){lastEarn=performance.now();earn(1,"playing")}
  depenetratePlayer();
- const handled=window.DDG_GAMES66?.update?.(state.mode,dt)===true;
+ const handled=window.DDG_GAMES3D?.update?.(state.mode,dt)===true||window.DDG_GAMES66?.update?.(state.mode,dt)===true;
  if(!handled){
   let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}
- if(state.render3d){const v=window.DDG_3D?.transformInput?.(dx,dy);if(v){dx=v.x;dy=v.y}}
+ if(state.render3d){const v=window.DDG_CORE3D?.transformInput?.(dx,dy);if(v){dx=v.x;dy=v.y}}
  const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280;if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
  }
  for(const[id,t]of state.targets){const p=state.players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}if(performance.now()-state.lastMove>(C.MOVE_INTERVAL||90)){net.send("move",{id:me.id,x:me.x,y:me.y});state.lastMove=performance.now()}

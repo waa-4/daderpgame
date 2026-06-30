@@ -231,3 +231,15 @@ body.mode-3d.low-performance
  #build3dPanel{display:none}
  .mobile-active-panel#build3dPanel{display:flex!important}
 }
+
+body.mode-3d #drawBtn.active-drawing{outline:2px solid #ff4fc3}
+body.mode-3d #threeCanvas{cursor:grab}
+body.mode-3d #threeCanvas:active{cursor:grabbing}
+body.mode-3d.draw-mode #threeCanvas{cursor:crosshair}
+
+.dimension-buttons{display:none!important}
+.game-card>.single-play{position:absolute;left:18px;right:18px;bottom:17px;width:calc(100% - 36px);background:#218b56!important;border-color:#62d493!important;font-weight:800}
+#gameCanvas{display:none!important}
+#threeHost{display:block!important}
+#cameraModeBtn{white-space:nowrap}
+body.mode-3d #ddgMinimap{display:none!important}

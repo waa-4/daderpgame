@@ -1,0 +1,12 @@
+(() => {
+"use strict";
+const B=()=>window.DDG_BRIDGE;let mode='',data={};
+const hit=(x,y,r,p=22)=>x+p>r.x&&x-p<r.x+r.w&&y+p>r.y&&y-p<r.y+r.h;
+function setup(m){mode=m;data={};if(m==='og')data={speedZones:[{x:500,y:500,w:420,h:260}],flingPads:[{x:1200,y:700,w:180,h:180},{x:2100,y:1100,w:180,h:180}],toys:[{x:850,y:1450,w:180,h:180},{x:1800,y:420,w:220,h:160}]};if(m==='warfare')data={walls:[{x:620,y:260,w:90,h:680},{x:620,y:1260,w:90,h:680},{x:1280,y:700,w:420,h:90},{x:1280,y:1320,w:420,h:90},{x:2070,y:260,w:90,h:680},{x:2070,y:1260,w:90,h:680},{x:930,y:1020,w:320,h:90},{x:1610,y:1020,w:320,h:90}],weaponFx:[],lastFire:0}}
+function update(m,dt){if(m==='warfare'){for(const f of data.weaponFx||[])f.life-=dt;data.weaponFx=(data.weaponFx||[]).filter(f=>f.life>0)}return false}
+function action(m){if(m==='og'){const me=B().getMe(),pad=(data.flingPads||[]).find(p=>hit(me.x,me.y,p,25));if(pad){me.x=Math.min(B().getWorld().w-80,me.x+180);me.y=Math.min(B().getWorld().h-80,me.y+110);B().toast('FLING!');return true}}if(m==='warfare'){const me=B().getMe(),weapon=document.querySelector('#weaponSelect')?.value||'bat',now=performance.now();if(now-(data.lastFire||0)<250)return true;data.lastFire=now;const fx={id:crypto.randomUUID(),weapon,x:me.x,y:me.y,life:weapon==='bat'?.35:1.4};data.weaponFx.push(fx);B().net.send('v91_event',{kind:'weapon_fx',fx})}return false}
+function solidRects(m){return m==='warfare'?(data.walls||[]):[]}
+function render(group,fx,api){const {box,THREE,mat}=api,st=B().getState();if(mode==='og'){for(const z of data.speedZones||[])box(group,z.x,z.y,z.w,z.h,8,0x31d7ff,.65);for(const p of data.flingPads||[])box(group,p.x,p.y,p.w,p.h,18,0xff4fc3,.8);for(const t of data.toys||[])box(group,t.x,t.y,t.w,t.h,75,0xffd35a)}if(mode==='warfare'){box(group,80,st.world.h/2-260,260,520,140,0xa52f3f);box(group,st.world.w-340,st.world.h/2-260,260,520,140,0x3266a5);for(const w of data.walls||[])box(group,w.x,w.y,w.w,w.h,165,0x3b4656);for(const f of data.weaponFx||[]){if(f.weapon==='bat'){const m=new THREE.Mesh(new THREE.BoxGeometry(18,18,115),mat(0x8b5a2b));m.position.set(f.x,55,f.y-65);m.rotation.x=-.35+f.life*3;fx.add(m)}else{const c=f.weapon==='laser'?0xffdf55:0x62c8ff,r=f.weapon==='laser'?22:10,m=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),mat(c));m.position.set(f.x,38,f.y-90+(1.4-f.life)*260);fx.add(m)}}}}
+function network(p){if(p.kind==='weapon_fx'&&mode==='warfare')data.weaponFx.push(p.fx)}
+window.DDG_GAMES3D={setup,update,action,solidRects,render,network};
+})();
