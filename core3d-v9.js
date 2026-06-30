@@ -12,6 +12,7 @@ function mat(c,o=1){const k=`${c}|${o}`;if(!matCache.has(k))matCache.set(k,new T
 function box(g,x,z,w,d,h,c,o=1){const m=new THREE.Mesh(geom(w,h,d),mat(c,o));m.position.set(x+w/2,h/2,z+d/2);g.add(m);return m}
 function clear(g){while(g.children.length)g.remove(g.children[g.children.length-1])}
 function transformInput(x,y){const f=-y,s=Math.sin(yaw),c=Math.cos(yaw);return{x:-x*c+f*s,y:x*s+f*c}}
+function getCameraMode(){return cameraMode}
 function cycleCamera(){cameraMode=cameraMode==="third"?"first":"third";return cameraMode}
 function jump(){if(onGround){vy=430;onGround=false}return true}
 function setup(mode){
@@ -46,5 +47,5 @@ function stop(){
   return
  }
  active=false;cancelAnimationFrame(raf);document.body.classList.remove('mode-3d');for(const m of playerMeshes.values())scene.remove(m);playerMeshes.clear();clear(staticGroup);clear(dynamicGroup);clear(fxGroup);try{renderer.renderLists.dispose();renderer.dispose();renderer.forceContextLoss()}catch{}if(host)host.innerHTML=''}
-window.DDG_CORE3D={setup,start,stop,jump,transformInput,collision,cycleCamera};
+window.DDG_CORE3D={setup,start,stop,jump,transformInput,collision,getCameraMode,cycleCamera};
 })();

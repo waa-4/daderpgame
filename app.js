@@ -423,8 +423,23 @@ addEventListener("contextmenu",e=>{
 document.addEventListener("visibilitychange",()=>{if(document.hidden)clearHeldInput()});
 function setupJoystick(){const base=$("mobileJoystick"),stick=$("mobileStick");let id=null;const reset=()=>{id=null;if(state){state.joy.x=0;state.joy.y=0}stick.style.transform=""};function mv(x,y){if(!state)return;const r=base.getBoundingClientRect(),m=r.width*.29;let dx=x-r.left-r.width/2,dy=y-r.top-r.height/2,l=Math.hypot(dx,dy)||1;if(l>m){dx=dx/l*m;dy=dy/l*m}state.joy.x=dx/m;state.joy.y=dy/m;stick.style.transform=`translate(${dx}px,${dy}px)`}base.onpointerdown=e=>{e.preventDefault();if(state)state.afkSince=Date.now();id=e.pointerId;base.setPointerCapture?.(id);mv(e.clientX,e.clientY)};base.onpointermove=e=>{if(e.pointerId===id){e.preventDefault();mv(e.clientX,e.clientY)}};base.onpointerup=base.onpointercancel=reset}setupJoystick();
 
-function toggleDraw(){state.draw=!state.draw;$("drawBtn").textContent="Draw: "+(state.draw?"ON":"OFF");$("mobileAltBtn").textContent=state.draw?"MOVE":"DRAW"}$("drawBtn").onclick=$("mobileAltBtn").onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};$("undoBtn").onclick=()=>{const id=state?.mine.pop();if(!id)return toast("Nothing to undo");const stroke=state.strokes.find(s=>s.id===id);if(stroke)state.redo.push(stroke);state.strokes=state.strokes.filter(s=>s.id!==id);net.send("undo",{strokeId:id})};
-$("redoBtn").onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast("Nothing to redo");state.strokes.push(stroke);state.mine.push(stroke.id);net.send("redo",{stroke})};$("clearBtn").onclick=()=>{if(!state?.host)return toast("Host only");state.strokes=[];net.send("clear",{})};$("actionBtn").onclick=$("mobileActionBtn").onclick=doAction;
+function toggleDraw(){
+ if(!state)return;
+ state.draw=!state.draw;
+ const drawButton=$("drawBtn");
+ if(drawButton)drawButton.textContent="Draw: "+(state.draw?"ON":"OFF");
+ $("mobileAltBtn").textContent=state.draw?"MOVE":"DRAW"
+}
+const drawButton=$("drawBtn");
+if(drawButton)drawButton.onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};
+$("mobileAltBtn").onclick=()=>{if(["og","freedraw"].includes(state?.mode))toggleDraw();else if(state?.mode==="warfare")cycleWeapon()};
+const undoButton=$("undoBtn");
+if(undoButton)undoButton.onclick=()=>{const id=state?.mine.pop();if(!id)return toast("Nothing to undo");const stroke=state.strokes.find(s=>s.id===id);if(stroke)state.redo.push(stroke);state.strokes=state.strokes.filter(s=>s.id!==id);net.send("undo",{strokeId:id})};
+const redoButton=$("redoBtn");
+if(redoButton)redoButton.onclick=()=>{const stroke=state?.redo.pop();if(!stroke)return toast("Nothing to redo");state.strokes.push(stroke);state.mine.push(stroke.id);net.send("redo",{stroke})};
+const clearButton=$("clearBtn");
+if(clearButton)clearButton.onclick=()=>{if(!state?.host)return toast("Host only");state.strokes=[];net.send("clear",{})};
+$("actionBtn").onclick=$("mobileActionBtn").onclick=doAction;
 $("mobileJumpBtn").onclick=()=>{if(window.DDG_CORE3D?.jump?.()!==true)doAction()};
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
 function doAction(){

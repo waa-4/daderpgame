@@ -258,3 +258,6 @@ body.mode-3d #ddgMinimap{display:none!important}
  50%{transform:rotate(180deg) scale(1.08)}
  to{transform:rotate(360deg) scale(.92)}
 }
+
+#threeCanvas{cursor:default!important}
+#threeCanvas:active{cursor:default!important}
