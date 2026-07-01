@@ -4,11 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08101d">
-<title>DaDerpGame v9.5 Alpha 1</title>
+<title>DaDerpGame v9.5 Alpha 2</title>
 <link rel="stylesheet" href="style.css?v=5.0.0">
 </head>
 <body>
-<div id="deployVersionBadge">LIVE BUILD: v9.5 ALPHA 1</div>
+<div id="deployVersionBadge">LIVE BUILD: v9.5 ALPHA 2</div>
+
+<div id="welcomeOverlay" class="welcome-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+  <div class="welcome-card">
+    <div class="welcome-cube">D</div>
+    <h2 id="welcomeTitle">Welcome to DaDerpGame!</h2>
+    <p>You are a cube. Pick a game, create or join a private room, then move around and cause harmless chaos.</p>
+    <div class="welcome-steps">
+      <div><b>1</b><span>Choose a game</span></div>
+      <div><b>2</b><span>Create a room or enter a code</span></div>
+      <div><b>3</b><span>Use WASD to move and drag to look</span></div>
+    </div>
+    <div class="welcome-controls">
+      <span><kbd>WASD</kbd> Move</span><span><kbd>Space</kbd> Jump</span>
+      <span><kbd>Drag</kbd> Look</span><span><kbd>E</kbd> Use</span>
+    </div>
+    <button id="welcomeStartBtn" class="primary">Got it — show me the games</button>
+  </div>
+</div>
+
 <main id="app">
 <section id="hubScreen" class="screen active">
   <header class="hub-header">
@@ -20,60 +39,60 @@
     <div class="wallet">Derpiness: <b id="derpinessLabel">0</b></div>
     <div class="header-actions">
       <button id="avatarBtn">Avatar</button>
-      <button id="friendsBtn">Friends</button>
+      <button id="friendsBtn">Friends</button><button id="helpBtn">How to Play</button>
     </div>
   </header>
 
   <div class="game-grid">
 <article class="game-card cyan">
       <span class="badge playable">PLAYABLE</span><h2>OG Derp</h2>
-      <p>Chat, draw, explore, and chill in private rooms.</p>
+      <p>Hang out, paint the ground, use toys, and chat.<div class="card-controls">WASD move · Drag look · E use</div></p>
       <button class="play-3d single-play" data-mode="og" data-render="3d">Play</button>
     </article>
     <article class="game-card red">
       <span class="badge playable">ROUND GAME</span><h2>Survive the Evil Boi</h2>
-      <p>Lobby countdown, random Evil Boi, proper maps, catching, spectators, and round rewards.</p>
+      <p>Run from the Evil Boi until time runs out.<div class="card-controls">WASD move · Space jump</div></p>
       <button class="play-3d single-play" data-mode="evil" data-render="3d">Play</button>
     </article>
     <article class="game-card blue">
       <span class="badge playable">TEAM BATTLE</span><h2>Cube Warfare</h2>
-      <p>Red vs Blue with bats, mini laser cannons, and water guns.</p>
+      <p>Fight the other team and protect your base.<div class="card-controls">WASD move · E attack</div></p>
       <button class="play-3d single-play" data-mode="warfare" data-render="3d">Play</button>
     </article>
     <article class="game-card pink"><span class="deferred-note">Surface painting active • air drawing later</span>
       <span class="badge playable">ART MODE</span><h2>Free Drawing</h2>
-      <p>Draw anywhere across one giant shared map.</p>
+      <p>Paint the ground together in a giant shared art room.<div class="card-controls">Open Paint · Drag to draw</div></p>
       <button class="play-3d single-play" data-mode="freedraw" data-render="3d">Play</button>
     </article>
     <article class="game-card gold">
       <span class="badge playable">CREATOR</span><h2>Create Mode</h2>
-      <p>Place, resize, recolor, save, load, test, and share simple games.</p>
+      <p>Build a small game, then switch to Playtest.<div class="card-controls">Click world · Use editor panel</div></p>
       <button class="play-3d single-play" data-mode="create" data-render="3d">Play</button>
     </article>
     <article class="game-card lime">
       <span class="badge playable">SURVIVAL</span><h2>MEAT</h2>
-      <p>Explore a gigantic maze, barricade paths, teleport to teammates, and survive ten hunting triangles.</p>
+      <p>Escape the yellow triangles inside a huge maze.<div class="card-controls">WASD move · E interact</div></p>
       <button class="play-3d single-play" data-mode="meat" data-render="3d">Play</button>
     </article>
     <article class="game-card orange">
       <span class="badge playable">LOGIC SANDBOX</span><h2>Machine Game</h2>
-      <p>Draw wires, place switches, displays, logic blocks, timers, movers, sensors, and build working machines.</p>
+      <p>Place parts and connect them to make working machines.<div class="card-controls">Click world · Use machine panel</div></p>
       <button class="play-3d single-play" data-mode="machine" data-render="3d">Play</button>
     </article>
 <article class="game-card purple">
       <span class="badge playable">PHYSICS SANDBOX</span><h2>Physics Things</h2>
-      <p>Spawn, drag, throw, stack, and explode physics objects around a sandbox.</p>
+      <p>Spawn objects, drag them, throw them, and make explosions.<div class="card-controls">Drag object · Release to throw</div></p>
       <button class="play-3d single-play" data-mode="physics" data-render="3d">Play</button>
     </article>
 <article class="game-card road">
       <span class="badge prototype">PROTOTYPE</span><h2>You Can Stop Now</h2>
-      <p>Drive endlessly, loot roadside areas, upgrade the car, and survive triangles after dark.</p>
+      <p>Drive, gather fuel and scrap, and survive each night.<div class="card-controls">W/S drive · A/D steer</div></p>
       <button class="play-3d single-play" data-mode="ycsn" data-render="3d">Play</button>
     </article>
   </div>
 
   <div class="promise">No microtransactions. No pay-to-win. Just derps.</div>
-  <div class="version">DaDerpGame v9.5 Alpha 1</div>
+  <div class="version">DaDerpGame v9.5 Alpha 2</div>
 </section>
 
 <section id="roomScreen" class="screen">
@@ -86,6 +105,9 @@
       <div><b id="profilePreviewName">Derp</b><small>Avatar slot <span id="activeSlotLabel">1</span></small></div>
     </div>
     <label>Display name<input id="displayNameInput" maxlength="18"></label>
+    <div class="room-explainer">
+      <b>New here?</b> Create an Online Room, then send its code to a friend. They choose the same game and enter the code.
+    </div>
     <div class="room-actions">
       <button id="createOnlineBtn" class="primary">Create Online Room</button>
       <div class="join-row"><input id="roomCodeInput" maxlength="8" placeholder="ROOM CODE"><button id="joinOnlineBtn">Join</button></div>
@@ -104,13 +126,22 @@
   <canvas id="gameCanvas" tabindex="0"></canvas>
   <button id="gameChatButton" aria-label="Open chat">💬<span id="gameChatBadge" hidden>0</span></button>
   <header id="topbar">
-    <button id="hubBtn">Hub</button>
+    <button id="hubBtn">← Hub</button><button id="gameHelpBtn">?</button>
     <div class="pill">MODE <b id="modeLabel">OG</b></div>
     <div class="pill">ROOM <b id="roomLabel">------</b></div>
     <div id="connectionLabel" class="pill offline">offline</div>
     <div class="pill">DERPINESS <b id="gameDerpiness">0</b></div>
-    <button id="copyRoomBtn">Copy</button><button id="fullscreenBtn">Fullscreen</button><button id="cameraModeBtn">Camera: Third</button><button id="cosmeticMenuBtn">Cosmetics</button><button id="paintMenuBtn">Paint</button>
+    <button id="copyRoomBtn">Copy Code</button>
+    <button id="gameMenuBtn">☰ Menu</button>
+    <div id="gameQuickMenu" class="quick-menu hidden">
+      <button id="fullscreenBtn">Fullscreen</button>
+      <button id="cameraModeBtn">Camera: Third</button>
+      <button id="cosmeticMenuBtn">Avatar</button>
+      <button id="paintMenuBtn">Paint</button>
+    </div>
   </header>
+
+  <div id="controlHint" class="control-hint">WASD Move · Drag Look · Space Jump · E Use</div>
 
   <aside id="roundPanel" class="floating-panel hidden">
     <h3 id="roundTitle">Waiting...</h3>
@@ -285,23 +316,24 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="config.js?v=9.5.0"></script>
-<script src="systems.js?v=9.5.0"></script>
-<script src="app.js?v=9.5.0"></script>
-<script src="tools.js?v=9.5.0"></script>
-<script src="qol.js?v=9.5.0"></script>
-<script src="mobile-fixes.js?v=9.5.0"></script>
-<script src="games-v66.js?v=9.5.0"></script>
-<script src="machine-game.js?v=9.5.0"></script>
-<script src="create-v66.js?v=9.5.0"></script>
-<script src="mobile-ui-v66.js?v=9.5.0"></script>
-<script src="chat-v7.js?v=9.5.0"></script>
-<script src="core3d-v9.js?v=9.5.0"></script>
-<script src="games3d-v91.js?v=9.5.0"></script>
-<script src="avatar-paint-v92.js?v=9.5.0"></script>
-<script src="physics-v95.js?v=9.5.0"></script>
-<script src="ycsn-v95.js?v=9.5.0"></script>
-<script src="create-v95.js?v=9.5.0"></script>
+<script src="config.js?v=9.5.2"></script>
+<script src="systems.js?v=9.5.2"></script>
+<script src="app.js?v=9.5.2"></script>
+<script src="tools.js?v=9.5.2"></script>
+<script src="qol.js?v=9.5.2"></script>
+<script src="mobile-fixes.js?v=9.5.2"></script>
+<script src="games-v66.js?v=9.5.2"></script>
+<script src="machine-game.js?v=9.5.2"></script>
+<script src="create-v66.js?v=9.5.2"></script>
+<script src="mobile-ui-v66.js?v=9.5.2"></script>
+<script src="chat-v7.js?v=9.5.2"></script>
+<script src="core3d-v9.js?v=9.5.2"></script>
+<script src="games3d-v91.js?v=9.5.2"></script>
+<script src="avatar-paint-v92.js?v=9.5.2"></script>
+<script src="physics-v95.js?v=9.5.2"></script>
+<script src="ycsn-v95.js?v=9.5.2"></script>
+<script src="create-v95.js?v=9.5.2"></script>
+<script src="onboarding-v952.js?v=9.5.2"></script>
 
 </body>
 </html>

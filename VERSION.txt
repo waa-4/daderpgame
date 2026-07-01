@@ -1,2 +1,2 @@
-DaDerpGame v9.5 Alpha 1
-MEAT fix + 3D avatar linkage + Physics Things + Create/Playtest + You Can Stop Now prototype
+DaDerpGame v9.5 Alpha 2
+New-player UI + turning sync + reliable 3D faces/cosmetics

@@ -1,48 +1,35 @@
-# DaDerpGame v9.5 Alpha 1
+# DaDerpGame v9.5 Alpha 2
 
-This is the first build from the new v9.5 roadmap.
+## New-player experience
 
-## Included now
+- First-visit welcome screen explains the game in three steps.
+- Persistent How to Play buttons are available in the hub and in-game.
+- Every game card now says what the player actually does.
+- Every card shows its most important controls.
+- The room screen explains how room codes work.
+- The crowded in-game top bar now uses a compact Menu.
+- A mode-specific control hint appears at the bottom.
 
-### MEAT repair
-- Camera-relative movement now uses the current v9 3D camera system.
-- Movement is no longer reversed relative to the camera.
-- Maze walls and placed barricades both block players.
-- Axis-separated collision reduces corner tunneling.
-- Emergency de-penetration returns players to the safe spawn if a random maze generates over them.
+## Turning synchronization
 
-### Avatar menu linked to 3D
-- The face and hat stored in the main five-slot avatar system now render on 3D cubes.
-- Online players use their synced face, hat, and color.
-- First person still hides the local cube and its cosmetics.
+- Player facing direction is sent with movement updates.
+- Remote player cubes smoothly rotate instead of always facing the local camera.
+- Rotation interpolation handles the -π/π wrap without spinning the long way around.
 
-### Full camera pitch
-- First person can now look upward and downward.
-- Third person keeps orbit pitch and avoids dropping below the ground.
+## Face and cosmetic synchronization
 
-### Physics Things
-- Replaces Platformer Chaos.
-- Spawn cubes, balls, heavy blocks, and explosion blocks.
-- Drag and throw objects.
-- Lightweight gravity, bouncing, collisions, boundaries, and multiplayer state syncing.
-- Explosion blocks blast nearby objects when released.
+- The five-slot avatar menu is now the single source of truth.
+- Saving a face or hat updates the active avatar slot.
+- Changes synchronize immediately to the room.
+- Face and hat data also travels in normal movement updates as a backup.
+- All existing avatar-menu face IDs now have 3D equivalents.
+- All existing avatar-menu hat IDs now have 3D equivalents.
+- Remote colors also update through avatar sync.
 
-### Create Mode upgrade
-- The old Test toggle is now a clearer Create / Playtest toggle.
-- Editor controls dim and lock during playtesting.
-- Existing placement, recolor, resize, clone, delete, save, load, and sharing remain.
+## Existing Alpha 1 systems remain
 
-### You Can Stop Now prototype
-- Drive along an endless chunked road.
-- Day/night cycle.
-- Town and house chunks.
-- Fuel and scrap pickups.
-- Engine upgrades.
-- Triangles spawn and chase the car at night.
-- Rare checkpoints save the current run locally.
-
-## Still planned for later v9.5 builds
-- More reliable multiplayer ownership for physics objects.
-- Better car steering, weapons, buildings, and checkpoint visuals.
-- More Studio-like Create tools.
-- Additional MEAT testing and map cleanup.
+- MEAT movement/collision repair
+- Physics Things
+- Create/Playtest
+- You Can Stop Now prototype
+- Surface painting

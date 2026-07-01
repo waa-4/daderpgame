@@ -295,6 +295,7 @@ window.DDG_BRIDGE={
   getTeams:()=>state?.teams,
   getProjectiles:()=>state?.projectiles,
   getAvatar:()=>avatar(),
+  syncCurrentAvatar:()=>{if(!me)return;Object.assign(me,avatar());net.send("avatar_v92",{playerId:me.id,face:me.face,hat:me.hat,color:me.color,name:me.name})},
   persistAvatar:()=>{persist();renderAvatarPreview()},
   getNet:()=>net,
   getCanvas:()=>canvas,
@@ -386,7 +387,7 @@ net.on("heartbeat",status=>{
 });
 net.on("presence",a=>{for(const p of a){if(p.host)state.hostId=p.id;if(p.id!==me.id&&!state.players.has(p.id)){state.players.set(p.id,{...p,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.id);state.health.set(p.id,100)}}}renderPlayers()});
 net.on("hello",p=>{if(!p.player)return;window.DDG_GAMES66?.onPlayerHello?.(p.player);if(p.player.id===me?.id)state.players.set(me.id,me);else{state.players.set(p.player.id,{...p.player,size:38,alive:true});if(state.mode==="warfare"){assignTeam(p.player.id);state.health.set(p.player.id,100)}}if(p.host)state.hostId=p.player.id;renderPlayers()});
-net.on("move",p=>{if(p.id!==me.id){if(!state.players.has(p.id))state.players.set(p.id,{id:p.id,name:"Cube",color:"#fff",face:"none",hat:"none",x:p.x,y:p.y,size:38,alive:true});state.targets.set(p.id,{x:p.x,y:p.y})}});
+net.on("move",p=>{if(p.id!==me.id){if(!state.players.has(p.id))state.players.set(p.id,{id:p.id,name:"Cube",color:"#fff",face:"none",hat:"none",x:p.x,y:p.y,rot:p.rot||0,size:38,alive:true});state.targets.set(p.id,{x:p.x,y:p.y,rot:Number.isFinite(p.rot)?p.rot:0});const q=state.players.get(p.id);if(q){if(p.face)q.face=p.face;if(p.hat)q.hat=p.hat}}});
 net.on("chat",p=>{if(window.DDG_MUTED?.has(p.senderId))return;addMessage(censor(p.name),censor(p.text),p.color);const q=state.players.get(p.senderId);if(q){q.msg=censor(p.text);q.msgUntil=Date.now()+3500}});
 net.on("draw",p=>{if(p.senderId!==me.id)state.strokes.push(p);window.DDG_GAMES66?.network?.("draw",p)});net.on("undo",p=>state.strokes=state.strokes.filter(s=>s.id!==p.strokeId));net.on("redo",p=>{if(p.stroke)state.strokes.push(p.stroke)});net.on("clear",()=>state.strokes=[]);net.on("afk",p=>{const q=state.players.get(p.id);if(q)q.afk=!!p.afk});net.on("ping_marker",p=>window.dispatchEvent(new CustomEvent("ddg-ping-received",{detail:p})));net.on("leave",p=>{state.players.delete(p.id);window.DDG_GAMES66?.network?.("leave",p);renderPlayers()});
 net.on("round_state",p=>{if(!state.host)Object.assign(state.round,p.round)});net.on("caught",p=>{const q=state.players.get(p.id);if(q)q.alive=false;if(p.id===me.id)me.alive=false});
@@ -536,7 +537,10 @@ function update(dt){
  if(state.render3d){const v=window.DDG_CORE3D?.transformInput?.(dx,dy);if(v){dx=v.x;dy=v.y}}
  const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l}let speed=280*(state.speedBoost||1);if(state.mode==="evil"&&me.id===state.round.evilId)speed=340;const n=collisionMove(clamp(me.x+dx*speed*dt,20,state.world.w-20),clamp(me.y+dy*speed*dt,20,state.world.h-20));me.x=n.x;me.y=n.y;
  }
- for(const[id,t]of state.targets){const p=state.players.get(id);if(p){p.x+=(t.x-p.x)*Math.min(1,dt*12);p.y+=(t.y-p.y)*Math.min(1,dt*12)}}if(performance.now()-state.lastMove>(C.MOVE_INTERVAL||90)){net.send("move",{id:me.id,x:me.x,y:me.y});state.lastMove=performance.now()}
+ for(const[id,t]of state.targets){const p=state.players.get(id);if(p){
+  const a=Math.min(1,dt*12);p.x+=(t.x-p.x)*a;p.y+=(t.y-p.y)*a;
+  if(Number.isFinite(t.rot)){let d=((t.rot-(p.rot||0)+Math.PI)%(Math.PI*2))-Math.PI;p.rot=(p.rot||0)+d*a}
+ }}if(performance.now()-state.lastMove>(C.MOVE_INTERVAL||90)){net.send("move",{id:me.id,x:me.x,y:me.y,rot:window.DDG_CORE3D?.getYaw?.()||me.rot||0,face:me.face,hat:me.hat});state.lastMove=performance.now()}
  const vw=visualViewport?.width||innerWidth,vh=visualViewport?.height||innerHeight;state.cam.x=me.x-vw/2;state.cam.y=me.y-vh/2;
  if(state.mode==="evil")updateEvil(dt);if(state.mode==="warfare")updateWarfare(dt);
 }
