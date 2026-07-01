@@ -304,3 +304,5 @@ body.creator-playtest #createPanel{opacity:.28;pointer-events:none}
  .control-hint{bottom:82px;max-width:92vw;white-space:normal;text-align:center}
  #topbar .pill:nth-of-type(3),#topbar .pill:nth-of-type(4){display:none}
 }
+
+#threeCanvas{touch-action:none!important}

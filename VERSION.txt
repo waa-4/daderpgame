@@ -1,2 +1,2 @@
-DaDerpGame v9.5 Alpha 2
-New-player UI + turning sync + reliable 3D faces/cosmetics
+DaDerpGame v9.5 Alpha 3
+Network jump sync + stable two-finger zoom + OG green screen room/stairs/platform

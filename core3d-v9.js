@@ -3,7 +3,7 @@
 const B=()=>window.DDG_BRIDGE;
 let scene,camera,renderer,clock,host,active=false,raf=0;
 let yaw=.65,pitch=.72,distance=520,cameraMode="third",jumpY=0,vy=0,onGround=true;
-let dragging=false,lastX=0,lastY=0,pointerMoved=false;
+let dragging=false,lastX=0,lastY=0,pointerMoved=false,pinching=false,pinchDistance=0;const touchPointers=new Map();
 const staticGroup=new THREE.Group(),dynamicGroup=new THREE.Group(),fxGroup=new THREE.Group();
 const playerMeshes=new Map(),geomCache=new Map(),matCache=new Map();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -14,6 +14,7 @@ function clear(g){while(g.children.length)g.remove(g.children[g.children.length-
 function transformInput(x,y){const f=-y,s=Math.sin(yaw),c=Math.cos(yaw);return{x:-x*c+f*s,y:x*s+f*c}}
 function getCameraMode(){return cameraMode}
 function getYaw(){return yaw}
+function getJumpY(){return jumpY}
 function cycleCamera(){cameraMode=cameraMode==="third"?"first":"third";return cameraMode}
 function jump(){if(onGround){vy=430;onGround=false}return true}
 function setup(mode){
@@ -37,7 +38,55 @@ function groundPoint(clientX,clientY){
  const p=new THREE.Vector3();
  return ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),p)?{x:p.x,y:p.z}:null
 }
-function addEvents(){const c=renderer.domElement;c.addEventListener('contextmenu',e=>e.preventDefault());c.addEventListener('pointerdown',e=>{if(e.button===2)return;if(window.DDG_PHYSICS95?.pointerDown?.(e,renderer,camera)){c.setPointerCapture?.(e.pointerId);return}dragging=true;pointerMoved=false;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)});c.addEventListener('pointermove',e=>{if(window.DDG_PHYSICS95?.pointerMove?.(e,renderer,camera))return;if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)pointerMoved=true;yaw-=dx*.006;pitch=clamp(pitch+dy*.004,.2,1.28);lastX=e.clientX;lastY=e.clientY});c.addEventListener('pointerup',e=>{if(window.DDG_PHYSICS95?.pointerUp?.())return;if(!pointerMoved){const p=groundPoint(e.clientX,e.clientY);if(p)window.DDG_GAMES3D?.pointerGround?.(B().getMode(),p.x,p.y)}dragging=false});c.addEventListener('pointercancel',()=>dragging=false);c.addEventListener('wheel',e=>{distance=clamp(distance+e.deltaY*.45,70,900);if(distance<95)cameraMode='first';else if(cameraMode==='first'&&distance>130)cameraMode='third';e.preventDefault()},{passive:false});addEventListener('resize',()=>{if(!active)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})}
+function addEvents(){
+ const c=renderer.domElement;
+ const pointerDistance=()=>{const pts=[...touchPointers.values()];return pts.length<2?0:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)};
+ c.addEventListener("contextmenu",e=>e.preventDefault());
+ c.addEventListener("pointerdown",e=>{
+  if(e.button===2)return;
+  if(e.pointerType==="touch"){
+   touchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+   if(touchPointers.size===2){
+    pinching=true;pinchDistance=pointerDistance();dragging=false;pointerMoved=true;
+    c.setPointerCapture?.(e.pointerId);e.preventDefault();return
+   }
+  }
+  if(window.DDG_PHYSICS95?.pointerDown?.(e,renderer,camera)){c.setPointerCapture?.(e.pointerId);return}
+  dragging=true;pointerMoved=false;lastX=e.clientX;lastY=e.clientY;c.setPointerCapture?.(e.pointerId)
+ });
+ c.addEventListener("pointermove",e=>{
+  if(e.pointerType==="touch"&&touchPointers.has(e.pointerId)){
+   touchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+   if(pinching&&touchPointers.size>=2){
+    const now=pointerDistance(),delta=now-pinchDistance;
+    distance=clamp(distance-delta*1.35,70,900);pinchDistance=now;
+    if(distance<95)cameraMode="first";else if(cameraMode==="first"&&distance>130)cameraMode="third";
+    e.preventDefault();return
+   }
+  }
+  if(window.DDG_PHYSICS95?.pointerMove?.(e,renderer,camera))return;
+  if(!dragging)return;
+  const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)pointerMoved=true;
+  yaw-=dx*.006;pitch=clamp(pitch+dy*.004,.2,1.28);lastX=e.clientX;lastY=e.clientY
+ });
+ const finish=e=>{
+  if(e?.pointerType==="touch")touchPointers.delete(e.pointerId);
+  if(pinching){
+   if(touchPointers.size<2){pinching=false;pinchDistance=0;dragging=false}
+   return
+  }
+  if(window.DDG_PHYSICS95?.pointerUp?.())return;
+  if(e&&!pointerMoved){const p=groundPoint(e.clientX,e.clientY);if(p)window.DDG_GAMES3D?.pointerGround?.(B().getMode(),p.x,p.y)}
+  dragging=false
+ };
+ c.addEventListener("pointerup",finish);c.addEventListener("pointercancel",finish);
+ c.addEventListener("wheel",e=>{
+  distance=clamp(distance+e.deltaY*.45,70,900);
+  if(distance<95)cameraMode="first";else if(cameraMode==="first"&&distance>130)cameraMode="third";
+  e.preventDefault()
+ },{passive:false});
+ addEventListener("resize",()=>{if(!active)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)})
+}
 function playerMesh(p){
  const g=new THREE.Group(),body=new THREE.Mesh(geom(42,42,42),new THREE.MeshLambertMaterial({color:p.color||"#46d7ff"}));
  body.position.y=21;body.userData.body=true;g.add(body);
@@ -49,7 +98,8 @@ function syncPlayers(){
  for(const [id,m] of [...playerMeshes])if(!ids.has(id)){scene.remove(m);playerMeshes.delete(id)}
  for(const p of st.players.values()){
   const g=playerMeshes.get(p.id)||playerMesh(p);
-  g.position.set(p.x,p.id===me.id?jumpY:0,p.y);g.rotation.y=(p.id===me.id?yaw:(p.rot||0))+Math.PI;
+  const baseHeight=window.DDG_GAMES3D?.getPlayerHeight?.(B().getMode(),p)||0;
+  g.position.set(p.x,baseHeight+(p.id===me.id?jumpY:(p.jumpY||0)),p.y);g.rotation.y=(p.id===me.id?yaw:(p.rot||0))+Math.PI;
   const body=g.children.find(c=>c.userData?.body);if(body)body.material.color.set(p.color||"#46d7ff");
   window.DDG_AVATAR_PAINT?.refreshPlayer?.(g,p,{THREE,geom,mat});
   g.visible=p.id!==me.id||cameraMode!=="first"
@@ -57,7 +107,7 @@ function syncPlayers(){
 }
 function updateCamera(){
  const me=B().getMe();if(!me)return;
- const py=22+jumpY,f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+ const py=22+jumpY+(window.DDG_GAMES3D?.getPlayerHeight?.(B().getMode(),me)||0),f=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
  if(cameraMode==="first"){
   const vertical=(.72-pitch)*1.45;
   camera.position.set(me.x,py+18,me.y);
@@ -82,5 +132,5 @@ function stop(){
   return
  }
  active=false;cancelAnimationFrame(raf);document.body.classList.remove('mode-3d');for(const m of playerMeshes.values())scene.remove(m);playerMeshes.clear();clear(staticGroup);clear(dynamicGroup);clear(fxGroup);try{renderer.renderLists.dispose();renderer.dispose();renderer.forceContextLoss()}catch{}if(host)host.innerHTML=''}
-window.DDG_CORE3D={setup,start,stop,jump,transformInput,collision,getCameraMode,getYaw,cycleCamera,groundPoint};
+window.DDG_CORE3D={setup,start,stop,jump,transformInput,collision,getCameraMode,getYaw,getJumpY,cycleCamera,groundPoint};
 })();

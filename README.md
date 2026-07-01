@@ -1,35 +1,30 @@
-# DaDerpGame v9.5 Alpha 2
+# DaDerpGame v9.5 Alpha 3
 
-## New-player experience
+## Jump synchronization
 
-- First-visit welcome screen explains the game in three steps.
-- Persistent How to Play buttons are available in the hub and in-game.
-- Every game card now says what the player actually does.
-- Every card shows its most important controls.
-- The room screen explains how room codes work.
-- The crowded in-game top bar now uses a compact Menu.
-- A mode-specific control hint appears at the bottom.
+- Other players now visibly rise and fall when they jump.
+- Jump height is sent with normal movement packets.
+- Remote jump height is interpolated to reduce snapping.
+- Raised OG Derp platforms and jumping can stack correctly.
 
-## Turning synchronization
+## Mobile two-finger zoom
 
-- Player facing direction is sent with movement updates.
-- Remote player cubes smoothly rotate instead of always facing the local camera.
-- Rotation interpolation handles the -π/π wrap without spinning the long way around.
+- Two-finger pinch now behaves like mouse-wheel zoom.
+- Spreading fingers zooms inward.
+- Pinching fingers together zooms outward.
+- Pinching temporarily disables camera dragging and object interactions.
+- Releasing a pinch no longer triggers an accidental world click.
+- First-person transitions use the same thresholds as scroll-wheel zoom.
 
-## Face and cosmetic synchronization
+## OG Derp additions
 
-- The five-slot avatar menu is now the single source of truth.
-- Saving a face or hat updates the active avatar slot.
-- Changes synchronize immediately to the room.
-- Face and hat data also travels in normal movement updates as a backup.
-- All existing avatar-menu face IDs now have 3D equivalents.
-- All existing avatar-menu hat IDs now have 3D equivalents.
-- Remote colors also update through avatar sync.
+- Chroma-green room for recording videos, skits, screenshots, and background replacement.
+- Seven-step staircase.
+- Raised social platform.
+- A dressed display cube wearing a face and crown.
+- Players visually rise as they walk up the stairs and remain raised on the platform.
+- Existing speed zone, fling pads, toys, painting, cosmetics, and chat remain.
 
-## Existing Alpha 1 systems remain
+## Promotion idea
 
-- MEAT movement/collision repair
-- Physics Things
-- Create/Playtest
-- You Can Stop Now prototype
-- Surface painting
+Short skits are a strong fit for DaDerpGame because the game already has expressive cubes, cosmetics, chat, private rooms, physics, triangles, and now a green-screen room. Videos should show one understandable joke or mechanic at a time instead of trying to explain the whole game.

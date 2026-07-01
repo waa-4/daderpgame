@@ -1,10 +1,9 @@
-DADERPGAME v9.5 ALPHA 2 — ROOT DROP-IN
+DADERPGAME v9.5 ALPHA 3 — ROOT DROP-IN
 
-1. Extract this ZIP.
+1. Extract the ZIP.
 2. Upload every file inside directly to the repository root.
-3. Replace the old files.
-4. Confirm onboarding-v952.js exists beside index.html.
-5. Commit and wait for GitHub Pages.
-6. Open https://www.daderpgame.org/?v=952
-7. Press Ctrl+F5.
-8. VERSION.txt should say DaDerpGame v9.5 Alpha 2.
+3. Replace old files.
+4. Commit and wait for GitHub Pages.
+5. Open https://www.daderpgame.org/?v=953
+6. Press Ctrl+F5.
+7. VERSION.txt should say DaDerpGame v9.5 Alpha 3.

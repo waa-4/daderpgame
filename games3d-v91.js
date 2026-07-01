@@ -5,7 +5,15 @@ let mode="",data={};
 const hit=(x,y,r,p=22)=>x+p>r.x&&x-p<r.x+r.w&&y+p>r.y&&y-p<r.y+r.h;
 function setup(m){
  mode=m;data={};
- if(m==="og")data={speedZones:[{x:500,y:500,w:420,h:260}],flingPads:[{x:1200,y:700,w:180,h:180},{x:2100,y:1100,w:180,h:180}],toys:[{x:850,y:1450,w:180,h:180},{x:1800,y:420,w:220,h:160}]};
+ if(m==="og")data={
+  speedZones:[{x:500,y:500,w:420,h:260}],
+  flingPads:[{x:1200,y:700,w:180,h:180},{x:2050,y:1080,w:150,h:150}],
+  toys:[{x:850,y:1250,w:180,h:150},{x:1800,y:420,w:220,h:160}],
+  greenRoom:{x:90,y:880,w:500,h:500},
+  stairs:{x:1430,y:760,w:260,h:350,steps:7},
+  platform:{x:1380,y:1080,w:600,h:330,height:190},
+  npc:null
+ };
  if(m==="warfare")data={walls:[{x:620,y:260,w:90,h:680},{x:620,y:1260,w:90,h:680},{x:1280,y:700,w:420,h:90},{x:1280,y:1320,w:420,h:90},{x:2070,y:260,w:90,h:680},{x:2070,y:1260,w:90,h:680},{x:930,y:1020,w:320,h:90},{x:1610,y:1020,w:320,h:90}],weaponFx:[],lastFire:0}
 }
 function update(m,dt){
@@ -42,6 +50,16 @@ function pointerGround(m,x,y){
  if(m==="machine")return window.DDG_MACHINE?.pointerAt?.(x,y)||false;
  return false
 }
+function getPlayerHeight(m,p){
+ if(m!=="og"||!p)return 0;
+ const s=data.stairs,pl=data.platform;
+ if(pl&&p.x>=pl.x&&p.x<=pl.x+pl.w&&p.y>=pl.y&&p.y<=pl.y+pl.h)return pl.height;
+ if(s&&p.x>=s.x&&p.x<=s.x+s.w&&p.y>=s.y&&p.y<=s.y+s.h){
+  const progress=Math.max(0,Math.min(1,(p.y-s.y)/s.h));
+  return Math.floor(progress*s.steps)*(pl.height/s.steps)
+ }
+ return 0
+}
 function solidRects(m){
  const base=m==="warfare"?(data.walls||[]):[];
  const gd=window.DDG_GAMES66?.getRenderData?.();
@@ -58,7 +76,30 @@ function render(group,fx,api){
  if(mode==="og"){
   for(const z of data.speedZones||[])box(group,z.x,z.y,z.w,z.h,8,0x31d7ff,.65);
   for(const p of data.flingPads||[])box(group,p.x,p.y,p.w,p.h,18,0xff4fc3,.8);
-  for(const t of data.toys||[])box(group,t.x,t.y,t.w,t.h,75,0xffd35a)
+  for(const t of data.toys||[])box(group,t.x,t.y,t.w,t.h,75,0xffd35a);
+
+  // Chroma-green room for screenshots, skits, and video effects.
+  const r=data.greenRoom;
+  box(group,r.x,r.y,r.w,r.h,6,0x00b83f);
+  box(group,r.x,r.y+r.h-18,r.w,18,250,0x00c94a);
+  box(group,r.x,r.y,18,r.h,250,0x00c94a);
+  box(group,r.x+r.w-18,r.y,18,r.h,250,0x00c94a);
+
+  // Staircase leading to a raised social platform.
+  const s=data.stairs,pl=data.platform,stepDepth=s.h/s.steps,stepHeight=pl.height/s.steps;
+  for(let i=0;i<s.steps;i++)box(group,s.x,s.y+i*stepDepth,s.w,stepDepth+2,(i+1)*stepHeight,0x7a8492);
+  box(group,pl.x,pl.y,pl.w,pl.h,pl.height,0x525e70);
+
+  // A dressed-up display cube at the top.
+  if(!data.npc){
+   const g=new THREE.Group(),body=new THREE.Mesh(new THREE.BoxGeometry(48,48,48),mat(0xffd45e));
+   body.position.y=24;body.userData.body=true;g.add(body);
+   window.DDG_AVATAR_PAINT?.decoratePlayer?.(g,{id:"og-guide",face:"catface",hat:"crown"},{THREE,mat});
+   data.npc=g
+  }
+  data.npc.position.set(pl.x+pl.w/2,pl.height,pl.y+pl.h/2);
+  data.npc.rotation.y=Math.PI;
+  group.add(data.npc)
  }
  if(mode==="evil"){
   for(const w of B().get3DData().evilWalls||[])box(group,w.x,w.y,w.w,w.h,170,0x3d3347)
@@ -91,5 +132,5 @@ function render(group,fx,api){
  }
 }
 function network(p){if(p.kind==="weapon_fx"&&mode==="warfare")data.weaponFx.push(p.fx)}
-window.DDG_GAMES3D={setup,update,action,pointerGround,solidRects,render,network};
+window.DDG_GAMES3D={setup,update,action,pointerGround,solidRects,getPlayerHeight,render,network};
 })();
