@@ -63,14 +63,20 @@ function getInput(){
  const k=B().getKeys(),j=B().getJoy();let x=0,y=0;
  if(k.has("a")||k.has("arrowleft"))x--;if(k.has("d")||k.has("arrowright"))x++;
  if(k.has("w")||k.has("arrowup"))y--;if(k.has("s")||k.has("arrowdown"))y++;
- x+=j.x;y+=j.y;if(B().is3D?.()){const v=window.DDG_3D?.transformInput?.(x,y);if(v){x=v.x;y=v.y}}
+ x+=j.x;y+=j.y;if(B().is3D?.()){const v=window.DDG_CORE3D?.transformInput?.(x,y);if(v){x=v.x;y=v.y}}
  const l=Math.hypot(x,y)||1;return{x:x/l,y:y/l,active:Math.abs(x)+Math.abs(y)>.08};
 }
 function barricadeRect(l){return{x:l.x-25,y:l.y-25,w:50,h:50}}
 function updateMeat(dt){
  const st=B().getState(),me=B().getMe(),input=getInput();
  if(input.active)data.lastDir={x:input.x,y:input.y};
- if(!data.dead)axisMove(me,input.x*275*dt,input.y*275*dt,data.walls,21);
+ if(!data.dead){
+  const solids=[...(data.walls||[]),...(data.loot||[]).filter(l=>!l.carriedBy&&l.hp>0).map(barricadeRect)];
+  // Move one axis at a time so corners do not tunnel through walls.
+  axisMove(me,input.x*275*dt,input.y*275*dt,solids,21);
+  // Emergency de-penetration for old/random maze overlaps.
+  for(const r of solids)if(hit(me.x,me.y,r,21)){me.x=360;me.y=360;break}
+ }
  const held=data.loot.find(l=>l.carriedBy===me.id);
  if(held){
   held.x=me.x+data.lastDir.x*58;held.y=me.y+data.lastDir.y*58;
@@ -122,7 +128,7 @@ function updatePlatform(dt){
  document.querySelector("#roundInfo").textContent=`Built: ${data.userPlatforms.length}`;
  return true;
 }
-function update(mode,dt){if(mode==="meat")return updateMeat(dt);if(mode==="platform")return updatePlatform(dt);return false}
+function update(mode,dt){if(mode==="meat")return updateMeat(dt);return false}
 function action(mode){
  if(mode==="meat"){
   const me=B().getMe(),held=data.loot.find(l=>l.carriedBy===me.id);
@@ -131,7 +137,6 @@ function action(mode){
   if(near){near.carriedBy=me.id;B().net.send("meat_loot",{loot:near});B().toast(`Picked up ${near.type}`)}else B().toast("Nothing nearby");
   return true;
  }
- if(mode==="platform"){if(data.onGround){data.vy=-520;data.onGround=false}return true}
  return false;
 }
 function placePlatformAt(x,y){
@@ -172,7 +177,7 @@ function collision(mode,nx,ny){
  const me=B().getMe();const blocked=data.walls?.some(r=>hit(nx,ny,r,21))||data.loot?.some(l=>!l.carriedBy&&hit(nx,ny,barricadeRect(l),21));
  return blocked?{x:me.x,y:me.y}:{x:nx,y:ny};
 }
-function solidRects(mode){if(mode==="meat")return[...(data.walls||[]),...(data.loot||[]).filter(l=>!l.carriedBy).map(barricadeRect)];return[]}
+function solidRects(mode){if(mode==="meat")return[...(data.walls||[]),...(data.loot||[]).filter(l=>!l.carriedBy&&l.hp>0).map(barricadeRect)];return[]}
 function network(type,p){if(type==="meat_state"&&data.mode==="meat"&&!B().getState().host){data.triangles=p.triangles||[];data.loot=p.loot||[]}}
 function sendSnapshot(target){if(data.mode==="meat")B().net.send("meat_snapshot",{target,triangles:data.triangles,loot:data.loot});if(data.mode==="platform")B().net.send("platform_snapshot",{target,platforms:data.userPlatforms})}
 function wire(){

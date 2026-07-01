@@ -7,9 +7,10 @@ const MODES={
  warfare:{name:"Cube Warfare",desc:"Red vs Blue team battles with three weapons.",world:[2600,1450]},
  freedraw:{name:"Free Drawing",desc:"Draw anywhere across a giant shared map.",world:[3200,2100]},
  create:{name:"Create Mode",desc:"Build, save, load, test, and share simple games.",world:[2600,1700]},
- platform:{name:"Platformer Chaos",desc:"A finished side-view building and drawing mode.",world:[4200,1500]},
  machine:{name:"Machine Game",desc:"Build working machines with wires and logic blocks.",world:[3600,2200]},
- meat:{name:"MEAT",desc:"Survive three yellow triangle hunters inside a gigantic maze.",world:[5000,3200]}
+ meat:{name:"MEAT",desc:"Survive three yellow triangle hunters inside a gigantic maze.",world:[5000,3200]},
+ physics:{name:"Physics Things",desc:"Spawn, drag, throw, stack, and explode physics objects.",world:[3200,2200]},
+ ycsn:{name:"You Can Stop Now",desc:"Drive endlessly, loot roadside areas, upgrade the car, and survive the night.",world:[2600,6000]}
 };
 const FACE_ITEMS=[
  ["none","None",0],["happy","Happy",0],["silly","Silly",0],["angry","Angry",0],["sleepy","Sleepy",0],["cool","Cool",0],
@@ -293,6 +294,8 @@ window.DDG_BRIDGE={
   getHealth:()=>state?.health,
   getTeams:()=>state?.teams,
   getProjectiles:()=>state?.projectiles,
+  getAvatar:()=>avatar(),
+  persistAvatar:()=>{persist();renderAvatarPreview()},
   getNet:()=>net,
   getCanvas:()=>canvas,
   earn:(n,why)=>earn(n,why),
@@ -355,6 +358,8 @@ function setupModeUI(){
  $("weaponSelect").classList.toggle("hidden",state.mode!=="warfare");
  $("createPanel").classList.toggle("hidden",state.mode!=="create");
  $("machinePanel")?.classList.toggle("hidden",state.mode!=="machine");
+ $("physicsPanel")?.classList.toggle("hidden",state.mode!=="physics");
+ $("ycsnPanel")?.classList.toggle("hidden",state.mode!=="ycsn");
  $("build3dPanel")?.classList.toggle("hidden",state.mode!=="build3d");
  $("drawBtn")?.classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
  $("undoBtn")?.classList.toggle("hidden",!["og","freedraw"].includes(state.mode));
@@ -365,6 +370,9 @@ function setupModeUI(){
  if(state.mode==="create")loadCreatorLocal();
  window.DDG_GAMES66?.setup?.(state.mode);
  window.DDG_GAMES3D?.setup?.(state.mode);
+ window.DDG_PHYSICS95?.setup?.(state.mode);
+ window.DDG_YCSN95?.setup?.(state.mode);
+ window.DDG_CREATE95?.setup?.(state.mode);
  window.DDG_CORE3D?.setup?.(state.mode);
 }
 function assignTeam(id){const red=[...state.teams.values()].filter(x=>x==="red").length,blue=[...state.teams.values()].filter(x=>x==="blue").length;state.teams.set(id,red<=blue?"red":"blue")}
@@ -389,6 +397,8 @@ net.on("machine_event",p=>window.DDG_MACHINE?.network?.("machine_event",p));
 net.on("v91_event",p=>window.DDG_GAMES3D?.network?.(p));
 net.on("avatar_v92",p=>window.DDG_AVATAR_PAINT?.networkAvatar?.(p));
 net.on("paint_v92",p=>window.DDG_AVATAR_PAINT?.networkPaint?.(p));
+net.on("physics95",p=>window.DDG_PHYSICS95?.network?.(p));
+net.on("ycsn95",p=>window.DDG_YCSN95?.network?.(p));
 net.on("build3d_sync",p=>window.DDG_BUILD3D?.network?.(p));
 net.on("request_snapshot",p=>{
  if(!state?.host)return;
@@ -450,7 +460,7 @@ $("mobileJumpBtn").onclick=()=>{if(window.DDG_CORE3D?.jump?.()!==true)doAction()
 function cycleWeapon(){const s=$("weaponSelect"),i=(s.selectedIndex+1)%s.options.length;s.selectedIndex=i;toast(s.options[i].text)}
 function doAction(){
  if(!state||!me)return;
- if(window.DDG_GAMES3D?.action?.(state.mode))return;
+ if(window.DDG_YCSN95?.action?.(state.mode)||window.DDG_PHYSICS95?.action?.(state.mode)||window.DDG_GAMES3D?.action?.(state.mode))return;
  if(window.DDG_GAMES66?.action?.(state.mode))return;
  if(state.mode==="warfare")fireWeapon();
  else if(state.mode==="create")state.creator.placing=!state.creator.placing;
@@ -520,7 +530,7 @@ function collisionMove(nx,ny){
 function update(dt){
  if(!state||!me)return;state.players.set(me.id,me);if(performance.now()-lastEarn>30000){lastEarn=performance.now();earn(1,"playing")}
  depenetratePlayer();
- const handled=window.DDG_GAMES3D?.update?.(state.mode,dt)===true||window.DDG_GAMES66?.update?.(state.mode,dt)===true;
+ const handled=window.DDG_PHYSICS95?.update?.(state.mode,dt)===true||window.DDG_YCSN95?.update?.(state.mode,dt)===true||window.DDG_GAMES3D?.update?.(state.mode,dt)===true||window.DDG_GAMES66?.update?.(state.mode,dt)===true;
  if(!handled){
   let dx=0,dy=0;if(!state.draw&&me.alive){if(state.keys.has("a")||state.keys.has("arrowleft"))dx--;if(state.keys.has("d")||state.keys.has("arrowright"))dx++;if(state.keys.has("w")||state.keys.has("arrowup"))dy--;if(state.keys.has("s")||state.keys.has("arrowdown"))dy++;dx+=state.joy.x;dy+=state.joy.y}
  if(state.render3d){const v=window.DDG_CORE3D?.transformInput?.(dx,dy);if(v){dx=v.x;dy=v.y}}

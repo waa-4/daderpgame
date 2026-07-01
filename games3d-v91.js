@@ -40,7 +40,6 @@ function pointerGround(m,x,y){
   c.placing=false;B().syncCreator();B().toast("Object placed");return true
  }
  if(m==="machine")return window.DDG_MACHINE?.pointerAt?.(x,y)||false;
- if(m==="platform")return window.DDG_GAMES66?.placePlatformAt?.(x,y)||false;
  return false
 }
 function solidRects(m){
@@ -78,9 +77,7 @@ function render(group,fx,api){
   for(const l of gd.loot||[])box(group,l.x-25,l.y-25,50,50,l.type==="metal"?80:60,l.type==="metal"?0x7e8b91:0x95643d);
   for(const t of gd.triangles||[]){const cone=new THREE.Mesh(new THREE.ConeGeometry(28,70,3),mat(0xffe11f));cone.position.set(t.x,35,t.y);cone.rotation.y=Math.PI;group.add(cone)}
  }
- if(mode==="platform"&&gd){
-  for(const p of [...(gd.platforms||[]),...(gd.userPlatforms||[])])box(group,p.x,650,p.w,80,26,0x50d4c9)
- }
+
  if(mode==="create"){
   for(const o of B().getCreator()?.objects||[])box(group,o.x-o.w/2,o.y-o.h/2,o.w,o.h,o.type==="block"?Math.max(35,o.h*.55):30,o.color||"#46d7ff",o.type==="spawn"?.5:1)
  }
