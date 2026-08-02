@@ -1,22 +1,26 @@
-# DaDerpGame 3D
+# DaDerpGame 3D v0.2
 
-Simple GitHub Pages multiplayer sandbox using Three.js + Supabase.
+This version removes the database dependency from joining.
+
+## Important
+You do **not** need to run SQL just to join anymore.
+
+Rooms, chat, movement, and blocks use Supabase Realtime Broadcast + Presence directly.
 
 ## Features
-- Any room code auto-creates/joins a room
-- Up to 10 active players
-- Realtime movement and chat
-- Colored 1x1, 2x2, or 3x3 blocks
-- Separate collision toggles for the owner and other players
-- Cannot place a block overlapping a player
-- Right-click your own blocks to delete them
-- WASD + Space
-- Shift+drag or middle-drag to orbit, wheel to zoom
+- Any room code auto-creates/joins
+- Up to 10 active players per room
+- Realtime movement
+- Realtime chat
+- Colored blocks
+- 1x1, 2x2, 3x3 sizes
+- Collision for self toggle
+- Collision for others toggle
+- Cannot place blocks overlapping players
+- Right-click your own blocks to remove them
 
-## Setup
-1. Open your Supabase project.
-2. Run `SUPABASE_SETUP.sql` once in SQL Editor.
-3. Upload this folder to GitHub.
-4. Enable GitHub Pages.
+## Tradeoff
+Because this version is realtime-only, blocks and chat are not permanently saved after everyone leaves the room. That can be added later once the core multiplayer is stable.
 
-The publishable key you provided is already in `app.js`. Do not put a service-role key in a public site.
+## GitHub Pages
+Upload this folder directly to a repository and enable GitHub Pages.
