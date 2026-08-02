@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>DaDerpGame 3D v0.2</title>
+  <title>DaDerpGame</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="joinScreen" class="screen">
     <div class="panel joinPanel">
-      <h1>DaDerpGame 3D <small>v0.2</small></h1>
-      <p>Enter any room code. Rooms are realtime and auto-created — no SQL setup required.</p>
+      <h1>DaDerpGame</h1>
+      <p>Enter a name and room code.</p>
       <input id="nameInput" maxlength="20" placeholder="Name" value="Derp">
       <input id="codeInput" maxlength="24" placeholder="Room code" autocomplete="off">
       <button id="joinBtn" class="primary">Join Room</button>
@@ -20,7 +20,7 @@
 
   <div id="gameUI" class="hidden">
     <div id="topbar">
-      <strong>DaDerpGame 3D</strong>
+      <strong>DaDerpGame</strong>
       <span id="roomLabel"></span>
       <span id="playerCount"></span>
       <button id="leaveBtn">Leave</button>
@@ -52,9 +52,6 @@
     <div id="help" class="panel floating">WASD move · Space jump · Shift+drag or middle-drag to orbit · Wheel zoom</div>
     <canvas id="game"></canvas>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -1,8 +1,11 @@
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.179.1/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
 "use strict";
 
 const SUPABASE_URL="https://hjezefwwradgurpbkcfr.supabase.co";
 const SUPABASE_KEY="sb_publishable_Q7XxTFNOO0OTzpgodFmtjQ_4ga7p0MU";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{realtime:{params:{eventsPerSecond:20}}});
 const $=id=>document.getElementById(id);
 
 const playerId=crypto.randomUUID();
@@ -24,11 +27,14 @@ function setJoinStatus(msg,bad=false){
 
 async function joinRoom(){
   if(channel)return;
+  if(!$("codeInput").value.trim()){setJoinStatus("Enter a room code.",true);return;}
   roomCode=normalizeCode($("codeInput").value);
   playerName=safeName($("nameInput").value);
   setJoinStatus("Connecting to realtime room...");
 
   try{
+    if(!navigator.onLine){setJoinStatus("No internet connection.",true);return;}
+    console.log("Joining room:",roomCode);
     channel=sb.channel(`daderpg:${roomCode}`,{
       config:{
         presence:{key:playerId},
@@ -69,7 +75,7 @@ async function joinRoom(){
     });
 
     if(status!=="SUBSCRIBED"){
-      setJoinStatus(`Could not join (${status}). Check internet access and the Supabase URL/key.`,true);
+      setJoinStatus(`Connection failed: ${status}. Open the browser console for details.`,true);
       try{await sb.removeChannel(channel)}catch{}
       channel=null;
       return;
