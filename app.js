@@ -1,11 +1,9 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.179.1/+esm";
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 "use strict";
 
 const SUPABASE_URL="https://hjezefwwradgurpbkcfr.supabase.co";
 const SUPABASE_KEY="sb_publishable_Q7XxTFNOO0OTzpgodFmtjQ_4ga7p0MU";
-const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{realtime:{params:{eventsPerSecond:20}}});
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{realtime:{params:{eventsPerSecond:20}}});
 const $=id=>document.getElementById(id);
 
 const playerId=crypto.randomUUID();
@@ -15,6 +13,23 @@ let yaw=Math.PI,pitch=-0.45,camDistance=7,dragging=false,lastPointer={x:0,y:0};
 const keys={},velocity=new THREE.Vector3(),blocks=new Map(),remotePlayers=new Map();
 const playerHalf=new THREE.Vector3(.38,.9,.38),PLAYER_HEIGHT=1.8;
 let grounded=false,lastBroadcast=0;
+
+
+function bootCheck(){
+  const status=$("joinStatus");
+  if(!window.THREE){
+    status.textContent="Three.js did not load.";
+    status.style.color="#ff9a9a";
+    return false;
+  }
+  if(!window.supabase){
+    status.textContent="Supabase library did not load.";
+    status.style.color="#ff9a9a";
+    return false;
+  }
+  status.textContent="Ready.";
+  return true;
+}
 
 const normalizeCode=v=>v.trim().replace(/\s+/g,"-").slice(0,24)||"room";
 const safeName=v=>v.trim().slice(0,20)||"Derp";
@@ -347,7 +362,11 @@ async function leave(){
   location.reload();
 }
 
-$("joinBtn").onclick=joinRoom;
+$("joinBtn").onclick=()=>{
+  setJoinStatus("Starting...");
+  if(!bootCheck())return;
+  joinRoom();
+};
 $("codeInput").addEventListener("keydown",e=>{if(e.key==="Enter")joinRoom()});
 $("nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")joinRoom()});
 $("sendBtn").onclick=sendMessage;
@@ -364,3 +383,5 @@ addEventListener("keyup",e=>{
   keys[e.key.toLowerCase()]=false;
 });
 window.addEventListener("beforeunload",()=>{if(channel)channel.untrack()});
+
+setTimeout(bootCheck,0);

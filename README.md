@@ -1,18 +1,13 @@
-# DaDerpGame
+# DaDerpGame v0.4
 
-Static Three.js multiplayer sandbox for GitHub Pages.
+This build fixes the Join button startup issue by using pinned browser-global builds of Three.js and Supabase instead of ES modules.
 
-## Controls
-- WASD: move
-- Space: jump
-- Shift + left-drag or middle-drag: orbit camera
-- Mouse wheel: camera distance
-- Left click: place block
-- Right click: remove one of your blocks
+When the page loads, the join box should say `Ready.`
 
-## Multiplayer
-Rooms use Supabase Realtime Broadcast and Presence. Enter any non-empty room code to join that channel.
+If it instead says:
+- `Three.js did not load.` — the Three.js CDN failed.
+- `Supabase library did not load.` — the Supabase CDN failed.
 
-No database tables are required for this version. Blocks and chat exist while players are connected and are not permanently stored.
+Enter a name and any non-empty room code, then press Join Room.
 
-Upload the contents of this folder to GitHub and enable GitHub Pages.
+No SQL setup is required for this realtime-only build.
