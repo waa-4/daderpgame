@@ -1,31 +1,18 @@
-# DaDerpGame v0.6
+# DaDerpGame v0.5
 
-## Modes
+Changes:
+- Player is a sphere.
+- PC movement is camera-relative and no longer inverted.
+- Right mouse drag orbits the camera.
+- Drag direction matches camera orbit direction.
+- Side menu has Move, Place, and Scale modes.
+- Place mode supports default and physics blocks.
+- Blocks snap to a 0.5-unit grid.
+- Block size and X/Y/Z rotation controls.
+- Physics blocks support cube/sphere shape, bounciness, weight, and sliding.
+- Move mode can drag physics blocks.
+- Scale mode can scale cube blocks.
+- Physics block edits and positions sync through the room.
+- Collision-for-self and collision-for-others settings remain.
 
-Move
-- WASD movement
-- Right-drag camera
-- Left-drag physics blocks you own
-- Physics blocks stay snapped horizontally to the selected grid
-
-Place
-- Default Block or Physics Block
-- Color
-- Size
-- Y rotation
-- Grid size
-- Physics shape: Box, Sphere, Cylinder
-- Bounciness
-- Weight
-- Sliding
-- Collision for owner / other players
-
-Scale
-- Click one of your blocks
-- Scale uniformly or on X, Y, or Z
-- Choose 0.25, 0.5, or 1.0 scale step
-- Scale range is limited to keep blocks usable
-
-## Notes
-
-Physics is intentionally lightweight in this version. Bounciness affects player/block contact now. Weight and sliding are stored and synchronized so they can be used for fuller physics behavior in the next update.
+This build is still realtime-only: room blocks disappear after all clients leave.
