@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>DaDerpGame 3D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="joinScreen" class="screen">
+    <div class="panel joinPanel">
+      <h1>DaDerpGame 3D</h1>
+      <p>Enter any room code. If nobody is there yet, it becomes a new room.</p>
+      <input id="nameInput" maxlength="20" placeholder="Name" value="Derp">
+      <input id="codeInput" maxlength="24" placeholder="Room code" autocomplete="off">
+      <button id="joinBtn" class="primary">Join Room</button>
+      <div id="joinStatus" class="status"></div>
+    </div>
+  </div>
+
+  <div id="gameUI" class="hidden">
+    <div id="topbar">
+      <strong>DaDerpGame 3D</strong>
+      <span id="roomLabel"></span>
+      <span id="playerCount"></span>
+      <button id="leaveBtn">Leave</button>
+    </div>
+
+    <div id="buildPanel" class="panel floating">
+      <h2>Build</h2>
+      <label>Color <input id="blockColor" type="color" value="#38bdf8"></label>
+      <label class="check"><input id="collideSelf" type="checkbox" checked> Collision for me</label>
+      <label class="check"><input id="collideOthers" type="checkbox" checked> Collision for others</label>
+      <label>Block size
+        <select id="blockSize">
+          <option value="1">1×1×1</option>
+          <option value="2">2×2×2</option>
+          <option value="3">3×3×3</option>
+        </select>
+      </label>
+      <p class="tiny">Left click ground/block face to place. Right click one of your blocks to remove.</p>
+    </div>
+
+    <div id="chatPanel" class="panel floating">
+      <div id="messages"></div>
+      <div class="chatRow">
+        <input id="chatInput" maxlength="160" placeholder="Say something...">
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <div id="help" class="panel floating">WASD move · Space jump · Shift+drag or middle-drag to orbit · Wheel zoom</div>
+    <canvas id="game"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>

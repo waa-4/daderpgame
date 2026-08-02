@@ -1,0 +1,20 @@
+:root{color-scheme:dark;font-family:Inter,system-ui,Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;color:#eaf6ff}
+button,input,select{font:inherit}.hidden{display:none!important}
+.screen{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at top,#13324c,#071018 55%)}
+.panel{background:#0a1722e8;border:1px solid #2a4f68;border-radius:12px;box-shadow:0 12px 40px #0008}
+.joinPanel{width:min(430px,calc(100% - 28px));padding:22px}.joinPanel h1{margin:0 0 8px}.joinPanel p{color:#a8c2d3;line-height:1.45}
+input,select,button{border:1px solid #34556a;background:#10222f;color:#effaff;border-radius:7px;padding:10px}
+.joinPanel input{width:100%;margin:6px 0}button{cursor:pointer}button:hover{background:#173246}
+.primary{width:100%;margin-top:8px;background:#0f4f70;border-color:#2a92bf}.status{min-height:22px;margin-top:10px;color:#9dc4d9}
+#gameUI{position:fixed;inset:0}#game{display:block;width:100%;height:100%}
+#topbar{position:fixed;z-index:20;top:0;left:0;right:0;height:48px;display:flex;align-items:center;gap:14px;padding:0 12px;background:#061019e8;border-bottom:1px solid #234257}
+#topbar #leaveBtn{margin-left:auto}.floating{position:fixed;z-index:15}
+#buildPanel{top:62px;left:12px;width:220px;padding:12px}#buildPanel h2{margin:0 0 10px;font-size:17px}
+#buildPanel label{display:block;margin:8px 0}#buildPanel input[type=color]{width:70px;height:35px;padding:2px;vertical-align:middle}
+#buildPanel select{width:100%;margin-top:5px}.check{display:flex!important;gap:8px;align-items:center}.check input{width:auto}.tiny{font-size:12px;color:#9bb3c3;line-height:1.35}
+#chatPanel{left:12px;bottom:12px;width:min(420px,calc(100% - 24px));padding:10px}
+#messages{height:180px;overflow:auto;font-size:13px;line-height:1.35;padding:4px}.message{margin:4px 0;word-break:break-word}.message .who{font-weight:700;color:#68d0ff}
+.chatRow{display:flex;gap:6px;margin-top:8px}.chatRow input{flex:1;min-width:0}
+#help{right:12px;bottom:12px;padding:10px;font-size:12px;color:#a8c2d3}
+@media(max-width:700px){#buildPanel{width:180px}#help{display:none}#chatPanel{width:calc(100% - 24px)}}
