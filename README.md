@@ -1,13 +1,31 @@
-# DaDerpGame v0.4
+# DaDerpGame v0.6
 
-This build fixes the Join button startup issue by using pinned browser-global builds of Three.js and Supabase instead of ES modules.
+## Modes
 
-When the page loads, the join box should say `Ready.`
+Move
+- WASD movement
+- Right-drag camera
+- Left-drag physics blocks you own
+- Physics blocks stay snapped horizontally to the selected grid
 
-If it instead says:
-- `Three.js did not load.` — the Three.js CDN failed.
-- `Supabase library did not load.` — the Supabase CDN failed.
+Place
+- Default Block or Physics Block
+- Color
+- Size
+- Y rotation
+- Grid size
+- Physics shape: Box, Sphere, Cylinder
+- Bounciness
+- Weight
+- Sliding
+- Collision for owner / other players
 
-Enter a name and any non-empty room code, then press Join Room.
+Scale
+- Click one of your blocks
+- Scale uniformly or on X, Y, or Z
+- Choose 0.25, 0.5, or 1.0 scale step
+- Scale range is limited to keep blocks usable
 
-No SQL setup is required for this realtime-only build.
+## Notes
+
+Physics is intentionally lightweight in this version. Bounciness affects player/block contact now. Weight and sliding are stored and synchronized so they can be used for fuller physics behavior in the next update.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>DaDerpGame v0.4</title>
+  <title>DaDerpGame v0.6</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,21 +27,105 @@
     </div>
 
     <div id="buildPanel" class="panel floating">
-      <h2>Build</h2>
-      <label>Color <input id="blockColor" type="color" value="#38bdf8"></label>
-      <label class="check"><input id="collideSelf" type="checkbox" checked> Collision for me</label>
-      <label class="check"><input id="collideOthers" type="checkbox" checked> Collision for others</label>
-      <label>Block size
-        <select id="blockSize">
-          <option value="1">1×1×1</option>
-          <option value="2">2×2×2</option>
-          <option value="3">3×3×3</option>
-        </select>
-      </label>
-      <p class="tiny">Left click ground/block face to place. Right click one of your blocks to remove.</p>
+      <h2>Mode</h2>
+      <div class="modeButtons three">
+        <button id="moveModeBtn" class="modeButton active">Move</button>
+        <button id="placeModeBtn" class="modeButton">Place</button>
+        <button id="scaleModeBtn" class="modeButton">Scale</button>
+      </div>
+
+      <div id="placeOptions" class="hidden">
+        <h2>Blocks</h2>
+
+        <label>Block type
+          <select id="blockType">
+            <option value="default">Default Block</option>
+            <option value="physics">Physics Block</option>
+          </select>
+        </label>
+
+        <label>Color <input id="blockColor" type="color" value="#38bdf8"></label>
+
+        <label>Block size
+          <select id="blockSize">
+            <option value="0.5">0.5 × 0.5 × 0.5</option>
+            <option value="1" selected>1 × 1 × 1</option>
+            <option value="2">2 × 2 × 2</option>
+            <option value="3">3 × 3 × 3</option>
+            <option value="4">4 × 4 × 4</option>
+          </select>
+        </label>
+
+        <label>Rotation Y
+          <select id="blockRotation">
+            <option value="0">0°</option>
+            <option value="45">45°</option>
+            <option value="90">90°</option>
+            <option value="135">135°</option>
+            <option value="180">180°</option>
+            <option value="225">225°</option>
+            <option value="270">270°</option>
+            <option value="315">315°</option>
+          </select>
+        </label>
+
+        <label>Grid size
+          <select id="gridSize">
+            <option value="0.25">0.25</option>
+            <option value="0.5">0.5</option>
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+          </select>
+        </label>
+
+        <div id="physicsOptions" class="hidden">
+          <label>Physics shape
+            <select id="physicsShape">
+              <option value="box">Box</option>
+              <option value="sphere">Sphere</option>
+              <option value="cylinder">Cylinder</option>
+            </select>
+          </label>
+          <label>Bounciness <input id="bounciness" type="range" min="0" max="1" step=".05" value=".2"></label>
+          <label>Weight <input id="weight" type="number" min=".1" max="100" step=".1" value="1"></label>
+          <label>Sliding <input id="sliding" type="range" min="0" max="1" step=".05" value=".4"></label>
+          <label class="check"><input id="collideSelf" type="checkbox" checked> Collision for me</label>
+          <label class="check"><input id="collideOthers" type="checkbox" checked> Collision for others</label>
+        </div>
+
+        <label class="check"><input id="showPlacementGhost" type="checkbox" checked> Placement preview</label>
+        <button id="removeOwnBtn" type="button">Remove Own Block</button>
+
+        <p class="tiny">Left click places a block. Right drag orbits the camera. Remove Own Block lets your next left click delete one of your blocks.</p>
+      </div>
+
+      <div id="scaleOptions" class="hidden">
+        <h2>Scale</h2>
+        <label>Axis
+          <select id="scaleAxis">
+            <option value="uniform">Uniform</option>
+            <option value="x">X only</option>
+            <option value="y">Y only</option>
+            <option value="z">Z only</option>
+          </select>
+        </label>
+        <label>Step
+          <select id="scaleStep">
+            <option value=".25">0.25</option>
+            <option value=".5" selected>0.5</option>
+            <option value="1">1</option>
+          </select>
+        </label>
+        <div class="twoButtons">
+          <button id="scaleDownBtn" type="button">Smaller</button>
+          <button id="scaleUpBtn" type="button">Larger</button>
+        </div>
+        <p class="tiny">Click a block to select it, then use Smaller/Larger.</p>
+        <div id="selectedBlockInfo" class="tiny">No block selected.</div>
+      </div>
     </div>
 
-    <div id="chatPanel" class="panel floating">
+    <div id="chatPanel"<div id="chatPanel" class="panel floating">
       <div id="messages"></div>
       <div class="chatRow">
         <input id="chatInput" maxlength="160" placeholder="Say something...">
@@ -49,7 +133,7 @@
       </div>
     </div>
 
-    <div id="help" class="panel floating">WASD move · Space jump · Shift+drag or middle-drag to orbit · Wheel zoom</div>
+    <div id="help" class="panel floating">WASD move · Space jump · Right drag orbit · Wheel zoom · Move mode drags physics blocks</div>
     <canvas id="game"></canvas>
   </div>
   
