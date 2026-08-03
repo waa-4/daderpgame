@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>DaDerpGame v0.6</title>
+  <title>DaDerpGame v0.7</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -99,6 +99,22 @@
     </aside>
 
     <div id="help" class="panel floating">WASD move · Space jump · Right-drag camera · Mouse wheel zoom</div>
+
+    <div id="mobileControls" class="hidden">
+      <div id="joystick" class="mobilePad"><div id="joystickKnob"></div></div>
+      <div id="mobileButtons">
+        <button id="mobileJump">Jump</button>
+        <button id="mobileAction">Use</button>
+        <button id="mobileDelete">Delete</button>
+        <button id="mobileMenu">Menu</button>
+      </div>
+      <div id="mobileLift" class="hidden">
+        <button id="mobileLiftUp">Up</button>
+        <button id="mobileLiftDown">Down</button>
+      </div>
+      <div id="mobileHint">Swipe the screen to move the camera</div>
+      <div id="mobileCrosshair">+</div>
+    </div>
     <canvas id="game"></canvas>
   </div>
 

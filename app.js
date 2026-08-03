@@ -12,6 +12,9 @@ let yaw=0,pitch=.32,camDistance=7,orbiting=false,lastPointer={x:0,y:0};
 const keys={},velocity=new THREE.Vector3(),blocks=new Map(),remotePlayers=new Map();
 const playerRadius=.48,PLAYER_HEIGHT=.96;
 let grounded=false,lastBroadcast=0,mode="blocks",selectedId=null,draggingBlock=false,dragPlane=null,dragOffset=new THREE.Vector3();
+const isMobile=matchMedia("(pointer:coarse)").matches||navigator.maxTouchPoints>0;
+let mobileMoveX=0,mobileMoveY=0,mobileCameraTouch=null,mobilePinchDistance=0,mobileGrabbed=false,mobileGrabHeight=1.5;
+
 
 function bootCheck(){
   const status=$("joinStatus");
@@ -120,6 +123,7 @@ function pointerRay(e){
 }
 function onPointerDown(e){
   if(e.target!==$("game"))return;
+  if(e.pointerType==="touch")return;
   pointerRay(e);
   if(e.button===2){
     orbiting=true;lastPointer={x:e.clientX,y:e.clientY};return;
@@ -274,6 +278,8 @@ function updateLocal(dt){
   const right=new THREE.Vector3(-forward.z,0,forward.x);
   const wish=new THREE.Vector3();
   if(keys.w)wish.add(forward);if(keys.s)wish.sub(forward);if(keys.d)wish.add(right);if(keys.a)wish.sub(right);
+  if(Math.abs(mobileMoveY)>.08)wish.addScaledVector(forward,-mobileMoveY);
+  if(Math.abs(mobileMoveX)>.08)wish.addScaledVector(right,mobileMoveX);
   if(wish.lengthSq())wish.normalize();
   const speed=5,next=localPlayer.position.clone();
   next.x+=wish.x*speed*dt;if(!collidesAt(next))localPlayer.position.x=next.x;
@@ -334,7 +340,21 @@ function updateCamera(){
 }
 function animate(now=performance.now()){
   if(!connected)return;requestAnimationFrame(animate);
-  const dt=Math.min(.033,clock.getDelta());updateLocal(dt);updatePhysics(dt);updateCamera();broadcastMovement(now);renderer.render(scene,camera);
+  const dt=Math.min(.033,clock.getDelta());
+  updateLocal(dt);
+  if(mobileGrabbed&&selectedId){
+    const b=blocks.get(selectedId);
+    if(b?.data.physics){
+      const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+      const target=camera.position.clone().addScaledVector(dir,4);
+      target.y=Math.max((Number(b.data.size)||1)/2,mobileGrabHeight);
+      target.x=snap(target.x);target.z=snap(target.z);
+      b.mesh.position.lerp(target,Math.min(1,dt*12));
+      b.data.x=b.mesh.position.x;b.data.y=b.mesh.position.y;b.data.z=b.mesh.position.z;
+      b.data.vx=b.data.vy=b.data.vz=0;
+    }
+  }
+  updatePhysics(dt);updateCamera();broadcastMovement(now);renderer.render(scene,camera);
 }
 
 function selectBlock(id){
@@ -408,4 +428,116 @@ $("leaveBtn").onclick=leave;
 addEventListener("keydown",e=>{if(document.activeElement&&["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;keys[e.key.toLowerCase()]=true});
 addEventListener("keyup",e=>{if(document.activeElement&&["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;keys[e.key.toLowerCase()]=false});
 window.addEventListener("beforeunload",()=>{if(channel)channel.untrack()});
-setMode("blocks");setTimeout(bootCheck,0);
+
+function rayFromScreenCenter(){
+  if(!renderer||!camera)return;
+  mouse.set(0,0);
+  raycaster.setFromCamera(mouse,camera);
+}
+function mobileUse(){
+  if(!connected)return;
+  rayFromScreenCenter();
+  if(mode==="blocks"){
+    placeFromCurrentRay();
+    return;
+  }
+  const hit=pickBlock(mode==="move");
+  selectBlock(hit?.object.userData.blockId||null);
+  if(mode==="move"){
+    const b=selectedId?blocks.get(selectedId):null;
+    if(b?.data.physics){
+      mobileGrabbed=!mobileGrabbed;
+      mobileGrabHeight=b.mesh.position.y;
+      $("mobileLift").classList.toggle("hidden",!mobileGrabbed);
+      $("mobileAction").textContent=mobileGrabbed?"Drop":"Grab";
+      if(!mobileGrabbed)broadcastBlockUpdate(selectedId);
+    }
+  }
+}
+function placeFromCurrentRay(){
+  const targets=[ground,...[...blocks.values()].map(v=>v.mesh)];
+  const hit=raycaster.intersectObjects(targets,false)[0];if(!hit)return;
+  const size=Number($("blockSize").value)||1;
+  const p=hit.point.clone();
+  if(hit.object.userData.blockId){
+    const other=blocks.get(hit.object.userData.blockId)?.data;
+    const otherSize=Number(other?.size)||1;
+    const n=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    p.copy(hit.object.position).addScaledVector(n,(otherSize+size)/2);
+  }else p.set(hit.point.x,size/2,hit.point.z);
+  p.x=snap(p.x);p.z=snap(p.z);p.y=Math.max(size/2,snap(p.y));
+  if(intersectsAnyPlayer(p,size)){flashStatus("Can't place on a player.");return}
+  const physics=$("blockType").value==="physics";
+  const data={id:crypto.randomUUID(),owner_id:playerId,owner_name:playerName,x:p.x,y:p.y,z:p.z,size,color:$("blockColor").value,collide_self:$("collideSelf").checked,collide_others:$("collideOthers").checked,physics,shape:physics?$("physicsShape").value:"cube",bounce:Number($("physicsBounce").value)||0,weight:Math.max(.1,Number($("physicsWeight").value)||1),sliding:Number($("physicsSliding").value)||0,rotX:0,rotY:0,rotZ:0,scaleX:1,scaleY:1,scaleZ:1,vx:0,vy:0,vz:0};
+  addBlock(data);channel?.send({type:"broadcast",event:"block_add",payload:data});
+}
+function mobileDeleteAtCenter(){
+  rayFromScreenCenter();
+  const hit=pickBlock(false);if(!hit)return;
+  const id=hit.object.userData.blockId,b=blocks.get(id);
+  if(!b||b.data.owner_id!==playerId){flashStatus("You can only delete your blocks.");return}
+  removeBlock(id);channel?.send({type:"broadcast",event:"block_remove",payload:{id}});
+}
+function setupMobile(){
+  if(!isMobile)return;
+  document.body.classList.add("mobile");
+  $("mobileControls").classList.remove("hidden");
+  $("mobileMenu").onclick=()=>$("sideMenu").classList.toggle("mobileClosed");
+  $("mobileJump").ontouchstart=e=>{e.preventDefault();keys[" "]=true};
+  $("mobileJump").ontouchend=e=>{e.preventDefault();keys[" "]=false};
+  $("mobileAction").onclick=mobileUse;
+  $("mobileDelete").onclick=mobileDeleteAtCenter;
+  $("mobileLiftUp").onclick=()=>{mobileGrabHeight+=.5};
+  $("mobileLiftDown").onclick=()=>{mobileGrabHeight=Math.max(.5,mobileGrabHeight-.5)};
+
+  const joy=$("joystick"),knob=$("joystickKnob");
+  let joyId=null;
+  function updateJoy(e){
+    const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let dx=e.clientX-cx,dy=e.clientY-cy;
+    const max=r.width*.34,len=Math.hypot(dx,dy)||1;
+    if(len>max){dx=dx/len*max;dy=dy/len*max}
+    mobileMoveX=dx/max;mobileMoveY=dy/max;
+    knob.style.transform=`translate(${dx}px,${dy}px)`;
+  }
+  joy.addEventListener("pointerdown",e=>{joyId=e.pointerId;joy.setPointerCapture(e.pointerId);updateJoy(e);e.preventDefault()});
+  joy.addEventListener("pointermove",e=>{if(e.pointerId===joyId){updateJoy(e);e.preventDefault()}});
+  const stopJoy=e=>{if(joyId!==null&&(e.pointerId===joyId||e.type==="pointercancel")){joyId=null;mobileMoveX=mobileMoveY=0;knob.style.transform="translate(0,0)"}};
+  joy.addEventListener("pointerup",stopJoy);joy.addEventListener("pointercancel",stopJoy);
+
+  const canvas=$("game");
+  const touches=new Map();
+  canvas.addEventListener("pointerdown",e=>{
+    if(e.pointerType!=="touch")return;
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    canvas.setPointerCapture(e.pointerId);
+    if(touches.size===1)mobileCameraTouch=e.pointerId;
+    if(touches.size===2){
+      const a=[...touches.values()];mobilePinchDistance=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    }
+    e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener("pointermove",e=>{
+    if(e.pointerType!=="touch"||!touches.has(e.pointerId))return;
+    const old=touches.get(e.pointerId);touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touches.size===1&&e.pointerId===mobileCameraTouch&&!mobileGrabbed){
+      const dx=e.clientX-old.x,dy=e.clientY-old.y;
+      yaw-=dx*.008;
+      pitch-=dy*.007;
+      pitch=THREE.MathUtils.clamp(pitch,-.15,1.35);
+    }else if(touches.size===2){
+      const a=[...touches.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      if(mobilePinchDistance>0)camDistance=THREE.MathUtils.clamp(camDistance+(mobilePinchDistance-dist)*.02,3,18);
+      mobilePinchDistance=dist;
+    }
+    e.preventDefault();
+  },{passive:false});
+  const endTouch=e=>{
+    touches.delete(e.pointerId);
+    mobilePinchDistance=0;
+    mobileCameraTouch=touches.size?[...touches.keys()][0]:null;
+  };
+  canvas.addEventListener("pointerup",endTouch);canvas.addEventListener("pointercancel",endTouch);
+}
+
+setMode("blocks");setupMobile();setTimeout(bootCheck,0);
