@@ -76,3 +76,5 @@ body.mobile #topbar,
 body.mobile #mobileButtons,
 body.mobile #joystick,
 body.mobile #mobileLift{touch-action:manipulation}
+
+#secretEditor{position:fixed;inset:0;z-index:30;pointer-events:none}#editorTop{height:46px;background:#181818;border-bottom:1px solid #555;display:flex;align-items:center;gap:8px;padding:6px 10px;pointer-events:auto}#editorTop span{color:#aaa;margin-right:auto}#editorPanel{position:absolute;right:12px;top:58px;width:280px;max-height:calc(100vh - 70px);overflow:auto;padding:10px;pointer-events:auto;background:#242424}#editorPanel label{display:block;margin:7px 0}#editorPanel input[type=number],#editorPanel select{width:100%}.fileButton{border:1px solid #555;background:#303030;padding:7px;border-radius:4px}.fileButton input{display:none}body.secretEditor #topbar,body.secretEditor #sideMenu,body.secretEditor #mobileControls,body.secretEditor #help{display:none!important}

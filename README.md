@@ -1,21 +1,16 @@
-# DaDerpGame v0.8 — Physics Playground
+# DaDerpGame v0.9
 
-Added:
-- Fixed mobile camera orbit tracking
-- Stable one-finger orbit and two-finger pinch zoom
-- Chat bubbles above local and remote players
-- Physics blocks can be pushed by players
-- Physics blocks transfer some momentum to other physics blocks
-- Pushable toggle
-- Physics presets:
-  - Normal
-  - Super Ball
-  - Heavy
-  - Ice
-  - Floaty
-  - Magnet
-- Magnet blocks attract nearby physics blocks
-- Physics settings can be changed after selecting a block
-- Mobile grab/drop still works
+Secret editor:
+- Type `clown9!` in normal chat.
+- The phrase is not sent.
+- Multiplayer disconnects and the game becomes a local/offline editor.
+- Fly around with WASD; Space/E up; Q/Shift down.
+- Place cube, sphere, or cylinder objects.
+- Static or physics objects.
+- Independent X/Y/Z size, scale, position, and rotation.
+- Edit bounce, weight, and sliding.
+- Select, duplicate, delete.
+- Export `daderpgame-map.json`.
+- Import the same JSON format later.
 
-Rooms remain realtime-only.
+The exported file is intended to be shareable so a finished local map can be turned into a built-in game map.

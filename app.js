@@ -12,6 +12,7 @@ let yaw=0,pitch=.32,camDistance=7,orbiting=false,lastPointer={x:0,y:0};
 const keys={},velocity=new THREE.Vector3(),blocks=new Map(),remotePlayers=new Map();
 const playerRadius=.48,PLAYER_HEIGHT=.96;
 let grounded=false,lastBroadcast=0,mode="blocks",selectedId=null,draggingBlock=false,dragPlane=null,dragOffset=new THREE.Vector3();
+let secretEditor=false,editorFly=true,editorSelected=null;
 const chatBubbleState=new Map();
 let lastPhysicsBroadcast=0;
 
@@ -285,6 +286,10 @@ function updateLocal(dt){
   if(keys.w)wish.add(forward);if(keys.s)wish.sub(forward);if(keys.d)wish.add(right);if(keys.a)wish.sub(right);
   if(Math.abs(mobileMoveY)>.08)wish.addScaledVector(forward,-mobileMoveY);
   if(Math.abs(mobileMoveX)>.08)wish.addScaledVector(right,mobileMoveX);
+  if(secretEditor&&editorFly){
+    if(keys[" "]||keys.e)wish.y+=1;if(keys.q||keys.shift)wish.y-=1;
+    if(wish.lengthSq())wish.normalize();localPlayer.position.addScaledVector(wish,12*dt);velocity.set(0,0,0);return;
+  }
   if(wish.lengthSq())wish.normalize();
   const speed=5,next=localPlayer.position.clone();
   next.x+=wish.x*speed*dt;if(!collidesAt(next))localPlayer.position.x=next.x;
@@ -295,15 +300,6 @@ function updateLocal(dt){
   if(localPlayer.position.y<playerRadius){localPlayer.position.y=playerRadius;velocity.y=0;grounded=true}
 }
 
-
-function applyPhysicsPreset(d){
-  const type=d.physicsType||"normal";
-  if(type==="superball"){d.bounce=.92;d.weight=.8;d.sliding=.6}
-  else if(type==="heavy"){d.bounce=.05;d.weight=8;d.sliding=.2}
-  else if(type==="ice"){d.bounce=.1;d.weight=1;d.sliding=.98}
-  else if(type==="floaty"){d.bounce=.55;d.weight=.25;d.sliding=.7}
-  else if(type==="magnet"){d.bounce=.2;d.weight=1.5;d.sliding=.45}
-}
 function updatePhysics(dt){
   const physics=[...blocks.values()].filter(b=>b.data.physics);
   for(const b of physics){
@@ -426,6 +422,7 @@ function updatePhysics(dt){
 }
 
 function broadcastMovement(now){
+  if(secretEditor)return;
   if(!channel||now-lastBroadcast<70)return;lastBroadcast=now;
   channel.send({type:"broadcast",event:"move",payload:{id:playerId,name:playerName,x:localPlayer.position.x,y:localPlayer.position.y,z:localPlayer.position.z}});
   for(const b of blocks.values())if(b.data.physics&&b.data.owner_id===playerId)channel.send({type:"broadcast",event:"block_update",payload:b.data});
@@ -556,9 +553,10 @@ function updateChatBubbles(){
 }
 function sendMessage(){
   const body=$("chatInput").value.trim();if(!body||!connected)return;$("chatInput").value="";
-  const payload={player_id:playerId,player_name:playerName,body};
-  channel?.send({type:"broadcast",event:"chat",payload});
+  if(body.toLowerCase()==="clown9!"){enterSecretEditor();return}
+  channel?.send({type:"broadcast",event:"chat",payload:{player_id:playerId,player_name:playerName,body}});
 }
+
 function appendMessage(m){
   if(!m)return;
   if(m.player_id)showChatBubble(m.player_id,m.player_name||"Derp",m.body||"");
@@ -567,6 +565,44 @@ function appendMessage(m){
   div.append(who,document.createTextNode(m.body||""));$("messages").appendChild(div);$("messages").scrollTop=$("messages").scrollHeight;
 }
 function flashStatus(msg){$("roomLabel").textContent=msg;setTimeout(()=>{if(connected)$("roomLabel").textContent=`Room: ${roomCode}`},1800)}
+
+function editorRay(){mouse.set(0,0);raycaster.setFromCamera(mouse,camera)}
+function editorPick(){editorRay();return raycaster.intersectObjects([...blocks.values()].map(v=>v.mesh),false)[0]||null}
+function makeEditorBlock(d){
+  d.id??=crypto.randomUUID();d.creator=true;d.scaleX??=1;d.scaleY??=1;d.scaleZ??=1;
+  const s=Number(d.size)||1;
+  const geo=d.shape==="sphere"?new THREE.SphereGeometry(s/2,20,14):d.shape==="cylinder"?new THREE.CylinderGeometry(s/2,s/2,s,20):new THREE.BoxGeometry(s,s,s);
+  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:d.color||"#cccccc",roughness:.75}));
+  mesh.position.set(d.x||0,d.y||.5,d.z||0);mesh.scale.set(d.scaleX,d.scaleY,d.scaleZ);
+  mesh.rotation.set(THREE.MathUtils.degToRad(d.rotX||0),THREE.MathUtils.degToRad(d.rotY||0),THREE.MathUtils.degToRad(d.rotZ||0));
+  mesh.userData.blockId=d.id;scene.add(mesh);blocks.set(d.id,{mesh,data:d});return d.id;
+}
+function refreshEditor(){
+  for(const [id,b] of blocks)b.mesh.material.emissive?.setHex(id===editorSelected?0x222222:0);
+  const b=editorSelected?blocks.get(editorSelected):null;$("edSelected").textContent=b?`${b.data.shape||"cube"} ${b.data.physics?"physics":"static"}`:"Nothing selected";
+  if(!b)return;const d=b.data;
+  $("edPX").value=d.x;$("edPY").value=d.y;$("edPZ").value=d.z;$("edScaleX").value=d.scaleX??1;$("edScaleY").value=d.scaleY??1;$("edScaleZ").value=d.scaleZ??1;
+  $("edRX").value=d.rotX??0;$("edRY").value=d.rotY??0;$("edRZ").value=d.rotZ??0;$("edBounce").value=d.bounce??.25;$("edWeight").value=d.weight??1;$("edSliding").value=d.sliding??.35;
+}
+function placeEditor(){
+  editorRay();const hit=raycaster.intersectObjects([ground,...[...blocks.values()].map(v=>v.mesh)],false)[0];const p=new THREE.Vector3();
+  if(hit){p.copy(hit.point);const n=hit.face?.normal?.clone();if(n){n.transformDirection(hit.object.matrixWorld);p.addScaledVector(n,.5)}}else{const d=new THREE.Vector3();camera.getWorldDirection(d);p.copy(camera.position).addScaledVector(d,5)}
+  p.x=snap(p.x);p.y=Math.max(.25,snap(p.y));p.z=snap(p.z);
+  editorSelected=makeEditorBlock({owner_id:playerId,owner_name:playerName,x:p.x,y:p.y,z:p.z,size:1,color:$("edColor").value,physics:$("edPhysics").checked,shape:$("edShape").value,scaleX:Number($("edSX").value)||1,scaleY:Number($("edSY").value)||1,scaleZ:Number($("edSZ").value)||1,rotX:0,rotY:0,rotZ:0,bounce:.25,weight:1,sliding:.35,pushable:true,physicsType:"normal",vx:0,vy:0,vz:0,collide_self:true,collide_others:true});refreshEditor();
+}
+function selectEditor(){const h=editorPick();editorSelected=h?.object?.userData?.blockId||null;refreshEditor()}
+function applyEditor(){const b=blocks.get(editorSelected);if(!b)return;const d=b.data;d.x=Number($("edPX").value)||0;d.y=Number($("edPY").value)||0;d.z=Number($("edPZ").value)||0;d.scaleX=Number($("edScaleX").value)||1;d.scaleY=Number($("edScaleY").value)||1;d.scaleZ=Number($("edScaleZ").value)||1;d.rotX=Number($("edRX").value)||0;d.rotY=Number($("edRY").value)||0;d.rotZ=Number($("edRZ").value)||0;d.bounce=Number($("edBounce").value)||0;d.weight=Math.max(.1,Number($("edWeight").value)||1);d.sliding=Number($("edSliding").value)||0;b.mesh.position.set(d.x,d.y,d.z);b.mesh.scale.set(d.scaleX,d.scaleY,d.scaleZ);b.mesh.rotation.set(THREE.MathUtils.degToRad(d.rotX),THREE.MathUtils.degToRad(d.rotY),THREE.MathUtils.degToRad(d.rotZ));refreshEditor()}
+function deleteEditor(){if(editorSelected){removeBlock(editorSelected);editorSelected=null;refreshEditor()}}
+function duplicateEditor(){const b=blocks.get(editorSelected);if(!b)return;const d=JSON.parse(JSON.stringify(b.data));d.id=crypto.randomUUID();d.x+=.5;d.z+=.5;editorSelected=makeEditorBlock(d);refreshEditor()}
+function exportEditor(){const map={format:"DaDerpMap",version:1,objects:[...blocks.values()].map(v=>({...v.data,x:v.mesh.position.x,y:v.mesh.position.y,z:v.mesh.position.z}))};const blob=new Blob([JSON.stringify(map,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="daderpgame-map.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function importEditor(file){const r=new FileReader();r.onload=()=>{try{const map=JSON.parse(String(r.result));if(map.format!=="DaDerpMap"||!Array.isArray(map.objects))throw new Error("Not a DaDerpGame map.");for(const id of [...blocks.keys()])removeBlock(id);map.objects.forEach(makeEditorBlock);editorSelected=null;refreshEditor()}catch(e){alert(e.message)}};r.readAsText(file)}
+async function enterSecretEditor(){secretEditor=true;document.body.classList.add("secretEditor");$("secretEditor").classList.remove("hidden");if(channel){try{await channel.untrack();await sb.removeChannel(channel)}catch{}channel=null}for(const o of remotePlayers.values())scene.remove(o);remotePlayers.clear()}
+function setupSecretEditor(){
+  $("flyToggle").onclick=()=>{editorFly=!editorFly;$("flyToggle").textContent=`Fly ${editorFly?"ON":"OFF"}`};
+  $("edPlace").onclick=placeEditor;$("edSelect").onclick=selectEditor;$("edApply").onclick=applyEditor;$("edDelete").onclick=deleteEditor;$("edDuplicate").onclick=duplicateEditor;
+  $("exportMap").onclick=exportEditor;$("importMap").onchange=e=>{const f=e.target.files?.[0];if(f)importEditor(f);e.target.value=""};$("exitEditor").onclick=()=>location.reload();
+}
+
 async function leave(){connected=false;if(channel){try{await channel.untrack();await sb.removeChannel(channel)}catch{}}location.reload()}
 
 $("joinBtn").onclick=()=>{setJoinStatus("Starting...");if(!bootCheck())return;joinRoom()};
@@ -705,4 +741,4 @@ function setupMobile(){
   canvas.addEventListener("pointercancel",endTouch);
 }
 
-setMode("blocks");setupMobile();setTimeout(bootCheck,0);
+setMode("blocks");setupMobile();setupSecretEditor();setTimeout(bootCheck,0);

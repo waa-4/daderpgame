@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>DaDerpGame v0.8</title>
+  <title>DaDerpGame v0.9</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -137,7 +137,27 @@
       <div id="mobileHint">Swipe empty screen to orbit · Pinch to zoom</div>
       <div id="mobileCrosshair">+</div>
     </div>
-    <div id="chatBubbles"></div>
+    <div id="secretEditor" class="hidden">
+<div id="editorTop"><strong>Local Editor</strong><span>Offline</span><button id="flyToggle">Fly ON</button><button id="exportMap">Export Map</button><label class="fileButton">Import Map<input id="importMap" type="file" accept=".json"></label><button id="exitEditor">Exit</button></div>
+<div id="editorPanel" class="panel">
+<h2>Build</h2>
+<label>Shape<select id="edShape"><option value="cube">Cube</option><option value="sphere">Sphere</option><option value="cylinder">Cylinder</option></select></label>
+<label>Color<input id="edColor" type="color" value="#cccccc"></label>
+<label class="check"><input id="edPhysics" type="checkbox"> Physics</label>
+<div class="three"><label>X<input id="edSX" type="number" step=".25" value="1"></label><label>Y<input id="edSY" type="number" step=".25" value="1"></label><label>Z<input id="edSZ" type="number" step=".25" value="1"></label></div>
+<button id="edPlace">Place at Crosshair</button>
+<hr>
+<h2>Edit</h2>
+<div id="edSelected">Nothing selected</div>
+<div class="row"><button id="edSelect">Select</button><button id="edDelete">Delete</button><button id="edDuplicate">Duplicate</button></div>
+<div class="three"><label>PX<input id="edPX" type="number" step=".25"></label><label>PY<input id="edPY" type="number" step=".25"></label><label>PZ<input id="edPZ" type="number" step=".25"></label></div>
+<div class="three"><label>SX<input id="edScaleX" type="number" step=".1" value="1"></label><label>SY<input id="edScaleY" type="number" step=".1" value="1"></label><label>SZ<input id="edScaleZ" type="number" step=".1" value="1"></label></div>
+<div class="three"><label>RX<input id="edRX" type="number" step="15" value="0"></label><label>RY<input id="edRY" type="number" step="15" value="0"></label><label>RZ<input id="edRZ" type="number" step="15" value="0"></label></div>
+<label>Bounce<input id="edBounce" type="range" min="0" max="1" step=".05" value=".25"></label>
+<label>Weight<input id="edWeight" type="number" min=".1" step=".1" value="1"></label>
+<label>Sliding<input id="edSliding" type="range" min="0" max="1" step=".05" value=".35"></label>
+<button id="edApply">Apply</button>
+</div></div><div id="chatBubbles"></div>
     <canvas id="game"></canvas>
   </div>
 
