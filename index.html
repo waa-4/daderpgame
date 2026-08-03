@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>DaDerpGame v0.5</title>
+  <title>DaDerpGame v0.6</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,81 +27,76 @@
     </div>
 
     <aside id="sideMenu" class="panel floating">
+      <div class="derpTitle"><strong>Derpmenu</strong><button id="collapseMenu" title="Collapse">−</button></div>
       <div class="modeTabs">
-        <button data-mode="move" class="on">Move</button>
-        <button data-mode="place">Place</button>
+        <button data-mode="blocks" class="on">Blocks</button>
+        <button data-mode="move">Move</button>
         <button data-mode="scale">Scale</button>
+        <button data-mode="rotate">Rotate</button>
+        <button data-mode="chat">Chat</button>
       </div>
 
-      <section id="moveOptions">
-        <h2>Move mode</h2>
-        <p class="tiny">Drag physics blocks around. Right-drag empty space to orbit the camera.</p>
-        <div id="physicsSelected" class="selectedBox">
-          <b>Selected physics block</b>
-          <span id="moveSelectedName">None</span>
-          <label>Bounciness <input id="editBounce" type="range" min="0" max="1" step=".05" value=".25"></label>
-          <label>Weight <input id="editWeight" type="number" min=".1" max="100" step=".1" value="1"></label>
-          <label>Sliding <input id="editSliding" type="range" min="0" max="1" step=".05" value=".35"></label>
-          <button id="applyPhysics">Apply settings</button>
-        </div>
-      </section>
-
-      <section id="placeOptions" class="hidden">
-        <h2>Place mode</h2>
+      <section id="blocksOptions">
+        <h2>Blocks</h2>
         <label>Block type
-          <select id="blockType">
-            <option value="default">Default block</option>
-            <option value="physics">Physics block</option>
-          </select>
+          <select id="blockType"><option value="default">Default block</option><option value="physics">Physics block</option></select>
         </label>
         <label>Color <input id="blockColor" type="color" value="#3a9bdc"></label>
-        <label>Size
-          <select id="blockSize">
-            <option value=".5">0.5</option>
-            <option value="1" selected>1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-          </select>
+        <label>Base size
+          <select id="blockSize"><option value=".5">0.5</option><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select>
         </label>
-        <div class="three">
-          <label>Rot X<input id="rotX" type="number" step="15" value="0"></label>
-          <label>Rot Y<input id="rotY" type="number" step="15" value="0"></label>
-          <label>Rot Z<input id="rotZ" type="number" step="15" value="0"></label>
-        </div>
         <label class="check"><input id="collideSelf" type="checkbox" checked> Collision for me</label>
         <label class="check"><input id="collideOthers" type="checkbox" checked> Collision for others</label>
-
-        <div id="physicsCreate">
-          <h3>Physics settings</h3>
-          <label>Shape
-            <select id="physicsShape">
-              <option value="cube">Cube</option>
-              <option value="sphere">Sphere</option>
-            </select>
-          </label>
+        <div id="physicsCreate" class="subbox hidden">
+          <h3>Physics block</h3>
+          <label>Shape<select id="physicsShape"><option value="cube">Cube</option><option value="sphere">Sphere</option></select></label>
           <label>Bounciness <input id="physicsBounce" type="range" min="0" max="1" step=".05" value=".25"></label>
           <label>Weight <input id="physicsWeight" type="number" min=".1" max="100" step=".1" value="1"></label>
           <label>Sliding <input id="physicsSliding" type="range" min="0" max="1" step=".05" value=".35"></label>
         </div>
-        <p class="tiny">Click a surface to place. Blocks snap to the grid.</p>
+        <p class="tiny">Click a surface to place. Blocks snap to a 0.5 grid.</p>
+      </section>
+
+      <section id="moveOptions" class="hidden">
+        <h2>Move</h2>
+        <p class="tiny">Drag physics blocks. Right-drag anywhere to orbit the camera.</p>
+        <span id="moveSelectedName" class="selectionName">None selected</span>
+        <div class="subbox">
+          <label>Bounciness <input id="editBounce" type="range" min="0" max="1" step=".05" value=".25"></label>
+          <label>Weight <input id="editWeight" type="number" min=".1" max="100" step=".1" value="1"></label>
+          <label>Sliding <input id="editSliding" type="range" min="0" max="1" step=".05" value=".35"></label>
+          <button id="applyPhysics">Apply physics</button>
+        </div>
       </section>
 
       <section id="scaleOptions" class="hidden">
-        <h2>Scale mode</h2>
-        <p class="tiny">Click a cube, then change its scale.</p>
-        <span id="scaleSelectedName">None selected</span>
-        <label>Scale <input id="scaleSlider" type="range" min=".25" max="4" step=".25" value="1"></label>
-        <div class="row"><button id="scaleDown">-</button><button id="scaleUp">+</button></div>
+        <h2>Scale</h2>
+        <p class="tiny">Click a block, then scale each axis separately.</p>
+        <span id="scaleSelectedName" class="selectionName">None selected</span>
+        <label>X scale <input id="scaleX" type="range" min=".25" max="4" step=".25" value="1"><output id="scaleXValue">1.00</output></label>
+        <label>Y scale <input id="scaleY" type="range" min=".25" max="4" step=".25" value="1"><output id="scaleYValue">1.00</output></label>
+        <label>Z scale <input id="scaleZ" type="range" min=".25" max="4" step=".25" value="1"><output id="scaleZValue">1.00</output></label>
+        <button id="resetScale">Reset scale</button>
+      </section>
+
+      <section id="rotateOptions" class="hidden">
+        <h2>Rotation</h2>
+        <p class="tiny">Click a block, then rotate it on any axis.</p>
+        <span id="rotateSelectedName" class="selectionName">None selected</span>
+        <label>X rotation <input id="editRotX" type="number" step="15" value="0"></label>
+        <label>Y rotation <input id="editRotY" type="number" step="15" value="0"></label>
+        <label>Z rotation <input id="editRotZ" type="number" step="15" value="0"></label>
+        <div class="row"><button id="applyRotation">Apply</button><button id="resetRotation">Reset</button></div>
+      </section>
+
+      <section id="chatOptions" class="hidden">
+        <div class="chatHeader"><h2>Chat</h2><button id="toggleChat">Hide chat</button></div>
+        <div id="chatBody">
+          <div id="messages"></div>
+          <div class="chatRow"><input id="chatInput" maxlength="160" placeholder="Chat"><button id="sendBtn">Send</button></div>
+        </div>
       </section>
     </aside>
-
-    <div id="chatPanel" class="panel floating">
-      <div id="messages"></div>
-      <div class="chatRow">
-        <input id="chatInput" maxlength="160" placeholder="Chat">
-        <button id="sendBtn">Send</button>
-      </div>
-    </div>
 
     <div id="help" class="panel floating">WASD move · Space jump · Right-drag camera · Mouse wheel zoom</div>
     <canvas id="game"></canvas>

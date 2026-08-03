@@ -1,18 +1,10 @@
-# DaDerpGame v0.5
+# DaDerpGame v0.6
 
-Changes:
-- Player is a sphere.
-- PC movement is camera-relative and no longer inverted.
-- Right mouse drag orbits the camera.
-- Drag direction matches camera orbit direction.
-- Side menu has Move, Place, and Scale modes.
-- Place mode supports default and physics blocks.
-- Blocks snap to a 0.5-unit grid.
-- Block size and X/Y/Z rotation controls.
-- Physics blocks support cube/sphere shape, bounciness, weight, and sliding.
-- Move mode can drag physics blocks.
-- Scale mode can scale cube blocks.
-- Physics block edits and positions sync through the room.
-- Collision-for-self and collision-for-others settings remain.
-
-This build is still realtime-only: room blocks disappear after all clients leave.
+- Added Derpmenu tabs: Blocks, Move, Scale, Rotate, Chat.
+- Chat can be hidden and shown.
+- Horizontal right-drag camera orbit is inverted to match swipe direction.
+- Physics blocks collide with the ground and other blocks, bounce, and slide.
+- Move mode drags physics blocks.
+- Scale mode changes X, Y, and Z independently.
+- Rotation mode edits X, Y, and Z rotation.
+- Blocks continue snapping to a 0.5-unit grid.

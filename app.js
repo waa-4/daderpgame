@@ -11,7 +11,7 @@ let scene,camera,renderer,clock,raycaster,mouse,ground,localPlayer;
 let yaw=0,pitch=.32,camDistance=7,orbiting=false,lastPointer={x:0,y:0};
 const keys={},velocity=new THREE.Vector3(),blocks=new Map(),remotePlayers=new Map();
 const playerRadius=.48,PLAYER_HEIGHT=.96;
-let grounded=false,lastBroadcast=0,mode="move",selectedId=null,draggingBlock=false,dragPlane=null,dragOffset=new THREE.Vector3();
+let grounded=false,lastBroadcast=0,mode="blocks",selectedId=null,draggingBlock=false,dragPlane=null,dragOffset=new THREE.Vector3();
 
 function bootCheck(){
   const status=$("joinStatus");
@@ -126,7 +126,7 @@ function onPointerDown(e){
   }
   if(e.button!==0)return;
 
-  if(mode==="place"){placeFromPointer(e);return}
+  if(mode==="blocks"){placeFromPointer(e);return}
   if(mode==="move"){
     const hit=pickBlock(true);
     if(hit){
@@ -142,7 +142,7 @@ function onPointerDown(e){
     }else selectBlock(null);
     return;
   }
-  if(mode==="scale"){
+  if(mode==="scale"||mode==="rotate"){
     const hit=pickBlock(false);
     selectBlock(hit?.object.userData.blockId||null);
   }
@@ -150,7 +150,7 @@ function onPointerDown(e){
 function onPointerMove(e){
   if(orbiting){
     const dx=e.clientX-lastPointer.x,dy=e.clientY-lastPointer.y;
-    yaw+=dx*.006;
+    yaw-=dx*.006;
     pitch-=dy*.005;
     pitch=THREE.MathUtils.clamp(pitch,-.15,1.35);
     lastPointer={x:e.clientX,y:e.clientY};
@@ -209,7 +209,7 @@ function placeFromPointer(e){
     bounce:Number($("physicsBounce").value)||0,
     weight:Math.max(.1,Number($("physicsWeight").value)||1),
     sliding:Number($("physicsSliding").value)||0,
-    rotX:Number($("rotX").value)||0,rotY:Number($("rotY").value)||0,rotZ:Number($("rotZ").value)||0,
+    rotX:0,rotY:0,rotZ:0,scaleX:1,scaleY:1,scaleZ:1,
     vx:0,vy:0,vz:0
   };
   addBlock(data);
@@ -226,12 +226,13 @@ function intersectsAnyPlayer(pos,size){
 
 function addBlock(data){
   if(!scene||!data?.id||blocks.has(data.id))return;
+  data.scaleX??=data.scale??1;data.scaleY??=data.scale??1;data.scaleZ??=data.scale??1;
   const s=Number(data.size)||1;
   const geo=data.shape==="sphere"?new THREE.SphereGeometry(s/2,20,14):new THREE.BoxGeometry(s,s,s);
   const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:data.color||"#3a9bdc",roughness:.75}));
   mesh.position.set(Number(data.x)||0,Number(data.y)||s/2,Number(data.z)||0);
   mesh.rotation.set(THREE.MathUtils.degToRad(data.rotX||0),THREE.MathUtils.degToRad(data.rotY||0),THREE.MathUtils.degToRad(data.rotZ||0));
-  mesh.userData.blockId=data.id;scene.add(mesh);blocks.set(data.id,{mesh,data});
+  mesh.scale.set(Number(data.scaleX)||1,Number(data.scaleY)||1,Number(data.scaleZ)||1);mesh.userData.blockId=data.id;scene.add(mesh);blocks.set(data.id,{mesh,data});
 }
 function updateBlock(data){
   if(!data?.id)return;
@@ -243,7 +244,7 @@ function updateBlock(data){
     scene.remove(b.mesh);b.mesh.geometry.dispose();b.mesh.material.dispose();blocks.delete(data.id);addBlock(b.data);return;
   }
   b.mesh.position.set(data.x,data.y,data.z);
-  b.mesh.scale.setScalar(Number(data.scale)||1);
+  b.mesh.scale.set(Number(data.scaleX)||1,Number(data.scaleY)||1,Number(data.scaleZ)||1);
   b.mesh.rotation.set(THREE.MathUtils.degToRad(data.rotX||0),THREE.MathUtils.degToRad(data.rotY||0),THREE.MathUtils.degToRad(data.rotZ||0));
   b.mesh.material.color.set(data.color||"#3a9bdc");
 }
@@ -257,8 +258,9 @@ function removeBlock(id){const b=blocks.get(id);if(!b)return;scene?.remove(b.mes
 function shouldCollide(data){return data.owner_id===playerId?data.collide_self:data.collide_others}
 function playerBoxAt(p){return new THREE.Box3(new THREE.Vector3(p.x-playerRadius,p.y-playerRadius,p.z-playerRadius),new THREE.Vector3(p.x+playerRadius,p.y+playerRadius,p.z+playerRadius))}
 function blockBox(d){
-  const s=(Number(d.size)||1)*(Number(d.scale)||1);
-  return new THREE.Box3(new THREE.Vector3(d.x-s/2,d.y-s/2,d.z-s/2),new THREE.Vector3(d.x+s/2,d.y+s/2,d.z+s/2));
+  const base=Number(d.size)||1;
+  const sx=base*(Number(d.scaleX)||1),sy=base*(Number(d.scaleY)||1),sz=base*(Number(d.scaleZ)||1);
+  return new THREE.Box3(new THREE.Vector3(d.x-sx/2,d.y-sy/2,d.z-sz/2),new THREE.Vector3(d.x+sx/2,d.y+sy/2,d.z+sz/2));
 }
 function collidesAt(pos){
   if(pos.y-playerRadius<0)return true;
@@ -283,24 +285,34 @@ function updateLocal(dt){
 }
 
 function updatePhysics(dt){
-  for(const b of blocks.values()){
-    const d=b.data;if(!d.physics||draggingBlock&&d.id===selectedId)continue;
+  const physics=[...blocks.values()].filter(b=>b.data.physics);
+  for(const b of physics){
+    const d=b.data;if(draggingBlock&&d.id===selectedId)continue;
     d.vx=Number(d.vx)||0;d.vy=Number(d.vy)||0;d.vz=Number(d.vz)||0;
-    const weight=Math.max(.1,Number(d.weight)||1);
+    const weight=Math.max(.1,Number(d.weight)||1),bounce=Math.max(0,Math.min(1,Number(d.bounce)||0));
     d.vy-=9.8*dt*(.75+Math.min(weight,10)*.025);
     const slide=Math.max(0,Math.min(1,Number(d.sliding)||0));
-    const drag=Math.pow(.88+slide*.11,dt*60);
-    d.vx*=drag;d.vz*=drag;
-
-    const size=(Number(d.size)||1)*(Number(d.scale)||1);
-    let nx=b.mesh.position.x+d.vx*dt,ny=b.mesh.position.y+d.vy*dt,nz=b.mesh.position.z+d.vz*dt;
-    if(ny-size/2<0){
-      ny=size/2;
-      if(d.vy<0)d.vy=-d.vy*Math.max(0,Math.min(1,Number(d.bounce)||0));
-      if(Math.abs(d.vy)<.15)d.vy=0;
+    const drag=Math.pow(.82+slide*.17,dt*60);d.vx*=drag;d.vz*=drag;
+    const base=Number(d.size)||1;
+    const halfX=base*(Number(d.scaleX)||1)/2,halfY=base*(Number(d.scaleY)||1)/2,halfZ=base*(Number(d.scaleZ)||1)/2;
+    let next=b.mesh.position.clone();next.x+=d.vx*dt;next.y+=d.vy*dt;next.z+=d.vz*dt;
+    if(next.y-halfY<0){next.y=halfY;if(d.vy<0)d.vy=-d.vy*bounce;if(Math.abs(d.vy)<.12)d.vy=0}
+    // Land on static or other physics blocks using their world AABBs.
+    const nextBox=new THREE.Box3(new THREE.Vector3(next.x-halfX,next.y-halfY,next.z-halfZ),new THREE.Vector3(next.x+halfX,next.y+halfY,next.z+halfZ));
+    for(const other of blocks.values()){
+      if(other===b)continue;
+      const ob=blockBox(other.data);
+      if(!nextBox.intersectsBox(ob))continue;
+      const oldBottom=b.mesh.position.y-halfY,otherTop=ob.max.y;
+      if(d.vy<=0&&oldBottom>=otherTop-.15){next.y=otherTop+halfY;d.vy=-d.vy*bounce;if(Math.abs(d.vy)<.12)d.vy=0;nextBox.min.y=next.y-halfY;nextBox.max.y=next.y+halfY}
+      else{
+        // Simple side response.
+        const dx=Math.min(nextBox.max.x-ob.min.x,ob.max.x-nextBox.min.x);
+        const dz=Math.min(nextBox.max.z-ob.min.z,ob.max.z-nextBox.min.z);
+        if(dx<dz){next.x=b.mesh.position.x;d.vx=-d.vx*bounce}else{next.z=b.mesh.position.z;d.vz=-d.vz*bounce}
+      }
     }
-    b.mesh.position.set(nx,ny,nz);
-    d.x=nx;d.y=ny;d.z=nz;
+    b.mesh.position.copy(next);d.x=next.x;d.y=next.y;d.z=next.z;
   }
 }
 
@@ -329,19 +341,24 @@ function selectBlock(id){
   selectedId=id;
   for(const [bid,b] of blocks)b.mesh.material.emissive?.setHex(bid===id?0x222222:0x000000);
   const b=id?blocks.get(id):null;
-  $("moveSelectedName").textContent=b?.data.physics?`Physics ${b.data.shape}`:"None";
-  $("scaleSelectedName").textContent=b?`${b.data.shape||"cube"} block`:"None selected";
-  if(b?.data.physics){
-    $("editBounce").value=b.data.bounce??.25;$("editWeight").value=b.data.weight??1;$("editSliding").value=b.data.sliding??.35;
-  }
-  $("scaleSlider").value=b?.data.scale??1;
+  const name=b?`${b.data.physics?'Physics ':''}${b.data.shape||'cube'} block`:'None selected';
+  $("moveSelectedName").textContent=b?.data.physics?name:"Select a physics block";
+  $("scaleSelectedName").textContent=name;
+  $("rotateSelectedName").textContent=name;
+  if(b?.data.physics){$("editBounce").value=b.data.bounce??.25;$("editWeight").value=b.data.weight??1;$("editSliding").value=b.data.sliding??.35}
+  const sx=b?.data.scaleX??1,sy=b?.data.scaleY??1,sz=b?.data.scaleZ??1;
+  $("scaleX").value=sx;$("scaleY").value=sy;$("scaleZ").value=sz;
+  $("scaleXValue").value=Number(sx).toFixed(2);$("scaleYValue").value=Number(sy).toFixed(2);$("scaleZValue").value=Number(sz).toFixed(2);
+  $("editRotX").value=b?.data.rotX??0;$("editRotY").value=b?.data.rotY??0;$("editRotZ").value=b?.data.rotZ??0;
 }
 function setMode(next){
   mode=next;selectBlock(null);
   document.querySelectorAll(".modeTabs button").forEach(b=>b.classList.toggle("on",b.dataset.mode===mode));
+  $("blocksOptions").classList.toggle("hidden",mode!=="blocks");
   $("moveOptions").classList.toggle("hidden",mode!=="move");
-  $("placeOptions").classList.toggle("hidden",mode!=="place");
   $("scaleOptions").classList.toggle("hidden",mode!=="scale");
+  $("rotateOptions").classList.toggle("hidden",mode!=="rotate");
+  $("chatOptions").classList.toggle("hidden",mode!=="chat");
 }
 document.querySelectorAll(".modeTabs button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 $("blockType").onchange=()=>$("physicsCreate").classList.toggle("hidden",$("blockType").value!=="physics");
@@ -349,13 +366,25 @@ $("applyPhysics").onclick=()=>{
   const b=blocks.get(selectedId);if(!b?.data.physics)return;
   b.data.bounce=Number($("editBounce").value);b.data.weight=Number($("editWeight").value);b.data.sliding=Number($("editSliding").value);broadcastBlockUpdate(selectedId);
 };
-function applyScale(v){
-  const b=blocks.get(selectedId);if(!b||b.data.shape==="sphere")return;
-  b.data.scale=Math.max(.25,Math.min(4,Number(v)||1));b.mesh.scale.setScalar(b.data.scale);$("scaleSlider").value=b.data.scale;broadcastBlockUpdate(selectedId);
+function applyAxisScale(axis,value){
+  const b=blocks.get(selectedId);if(!b)return;
+  const v=Math.max(.25,Math.min(4,Number(value)||1));b.data["scale"+axis]=v;
+  b.mesh.scale.set(Number(b.data.scaleX)||1,Number(b.data.scaleY)||1,Number(b.data.scaleZ)||1);
+  $("scale"+axis+"Value").value=v.toFixed(2);broadcastBlockUpdate(selectedId);
 }
-$("scaleSlider").oninput=e=>applyScale(e.target.value);
-$("scaleDown").onclick=()=>applyScale((Number($("scaleSlider").value)||1)-.25);
-$("scaleUp").onclick=()=>applyScale((Number($("scaleSlider").value)||1)+.25);
+$("scaleX").oninput=e=>applyAxisScale("X",e.target.value);
+$("scaleY").oninput=e=>applyAxisScale("Y",e.target.value);
+$("scaleZ").oninput=e=>applyAxisScale("Z",e.target.value);
+$("resetScale").onclick=()=>{const b=blocks.get(selectedId);if(!b)return;b.data.scaleX=b.data.scaleY=b.data.scaleZ=1;b.mesh.scale.set(1,1,1);selectBlock(selectedId);broadcastBlockUpdate(selectedId)};
+$("applyRotation").onclick=()=>{
+  const b=blocks.get(selectedId);if(!b)return;
+  b.data.rotX=Number($("editRotX").value)||0;b.data.rotY=Number($("editRotY").value)||0;b.data.rotZ=Number($("editRotZ").value)||0;
+  b.mesh.rotation.set(THREE.MathUtils.degToRad(b.data.rotX),THREE.MathUtils.degToRad(b.data.rotY),THREE.MathUtils.degToRad(b.data.rotZ));broadcastBlockUpdate(selectedId);
+};
+$("resetRotation").onclick=()=>{const b=blocks.get(selectedId);if(!b)return;b.data.rotX=b.data.rotY=b.data.rotZ=0;b.mesh.rotation.set(0,0,0);selectBlock(selectedId);broadcastBlockUpdate(selectedId)};
+let chatVisible=true;
+$("toggleChat").onclick=()=>{chatVisible=!chatVisible;$("chatBody").classList.toggle("hidden",!chatVisible);$("toggleChat").textContent=chatVisible?"Hide chat":"Show chat"};
+$("collapseMenu").onclick=()=>{$("sideMenu").classList.toggle("collapsed");$("collapseMenu").textContent=$("sideMenu").classList.contains("collapsed")?"+":"−"};
 
 function sendMessage(){
   const body=$("chatInput").value.trim();if(!body||!connected)return;$("chatInput").value="";
@@ -379,4 +408,4 @@ $("leaveBtn").onclick=leave;
 addEventListener("keydown",e=>{if(document.activeElement&&["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;keys[e.key.toLowerCase()]=true});
 addEventListener("keyup",e=>{if(document.activeElement&&["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;keys[e.key.toLowerCase()]=false});
 window.addEventListener("beforeunload",()=>{if(channel)channel.untrack()});
-setMode("move");setTimeout(bootCheck,0);
+setMode("blocks");setTimeout(bootCheck,0);
