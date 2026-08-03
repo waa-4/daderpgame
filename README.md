@@ -1,16 +1,21 @@
-# DaDerpGame v0.7 — Mobile Support
+# DaDerpGame v0.8 — Physics Playground
 
 Added:
-- On-screen movement joystick
-- Jump, Use, Delete, and Menu buttons
-- One-finger camera swiping
-- Two-finger pinch camera zoom
-- Center crosshair for placing/selecting blocks
-- Mobile placement in Blocks mode
-- Mobile selection in Scale and Rotate modes
-- Mobile physics-block grab/drop in Move mode
-- Up/Down controls while holding a physics block
-- Responsive Derpmenu and larger touch targets
-- Safe-area support for phones with rounded corners/notches
+- Fixed mobile camera orbit tracking
+- Stable one-finger orbit and two-finger pinch zoom
+- Chat bubbles above local and remote players
+- Physics blocks can be pushed by players
+- Physics blocks transfer some momentum to other physics blocks
+- Pushable toggle
+- Physics presets:
+  - Normal
+  - Super Ball
+  - Heavy
+  - Ice
+  - Floaty
+  - Magnet
+- Magnet blocks attract nearby physics blocks
+- Physics settings can be changed after selecting a block
+- Mobile grab/drop still works
 
-Desktop controls remain available.
+Rooms remain realtime-only.

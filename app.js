@@ -12,6 +12,9 @@ let yaw=0,pitch=.32,camDistance=7,orbiting=false,lastPointer={x:0,y:0};
 const keys={},velocity=new THREE.Vector3(),blocks=new Map(),remotePlayers=new Map();
 const playerRadius=.48,PLAYER_HEIGHT=.96;
 let grounded=false,lastBroadcast=0,mode="blocks",selectedId=null,draggingBlock=false,dragPlane=null,dragOffset=new THREE.Vector3();
+const chatBubbleState=new Map();
+let lastPhysicsBroadcast=0;
+
 const isMobile=matchMedia("(pointer:coarse)").matches||navigator.maxTouchPoints>0;
 let mobileMoveX=0,mobileMoveY=0,mobileCameraTouch=null,mobilePinchDistance=0,mobileGrabbed=false,mobileGrabHeight=1.5;
 
@@ -213,6 +216,8 @@ function placeFromPointer(e){
     bounce:Number($("physicsBounce").value)||0,
     weight:Math.max(.1,Number($("physicsWeight").value)||1),
     sliding:Number($("physicsSliding").value)||0,
+    physicsType:$("physicsType")?.value||"normal",
+    pushable:$("physicsPushable")?.checked!==false,
     rotX:0,rotY:0,rotZ:0,scaleX:1,scaleY:1,scaleZ:1,
     vx:0,vy:0,vz:0
   };
@@ -230,7 +235,7 @@ function intersectsAnyPlayer(pos,size){
 
 function addBlock(data){
   if(!scene||!data?.id||blocks.has(data.id))return;
-  data.scaleX??=data.scale??1;data.scaleY??=data.scale??1;data.scaleZ??=data.scale??1;
+  data.scaleX??=data.scale??1;data.scaleY??=data.scale??1;data.scaleZ??=data.scale??1;data.physicsType??="normal";data.pushable??=true;
   const s=Number(data.size)||1;
   const geo=data.shape==="sphere"?new THREE.SphereGeometry(s/2,20,14):new THREE.BoxGeometry(s,s,s);
   const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:data.color||"#3a9bdc",roughness:.75}));
@@ -290,35 +295,133 @@ function updateLocal(dt){
   if(localPlayer.position.y<playerRadius){localPlayer.position.y=playerRadius;velocity.y=0;grounded=true}
 }
 
+
+function applyPhysicsPreset(d){
+  const type=d.physicsType||"normal";
+  if(type==="superball"){d.bounce=.92;d.weight=.8;d.sliding=.6}
+  else if(type==="heavy"){d.bounce=.05;d.weight=8;d.sliding=.2}
+  else if(type==="ice"){d.bounce=.1;d.weight=1;d.sliding=.98}
+  else if(type==="floaty"){d.bounce=.55;d.weight=.25;d.sliding=.7}
+  else if(type==="magnet"){d.bounce=.2;d.weight=1.5;d.sliding=.45}
+}
 function updatePhysics(dt){
   const physics=[...blocks.values()].filter(b=>b.data.physics);
   for(const b of physics){
-    const d=b.data;if(draggingBlock&&d.id===selectedId)continue;
+    const d=b.data;
+    if(draggingBlock&&d.id===selectedId)continue;
+    if(mobileGrabbed&&d.id===selectedId)continue;
+
     d.vx=Number(d.vx)||0;d.vy=Number(d.vy)||0;d.vz=Number(d.vz)||0;
-    const weight=Math.max(.1,Number(d.weight)||1),bounce=Math.max(0,Math.min(1,Number(d.bounce)||0));
-    d.vy-=9.8*dt*(.75+Math.min(weight,10)*.025);
+    applyPhysicsPreset(d);
+
+    const type=d.physicsType||"normal";
+    const weight=Math.max(.1,Number(d.weight)||1);
+    const bounce=Math.max(0,Math.min(1,Number(d.bounce)||0));
+    const gravity=type==="floaty"?3.2:9.8*(.75+Math.min(weight,10)*.025);
+    d.vy-=gravity*dt;
+
     const slide=Math.max(0,Math.min(1,Number(d.sliding)||0));
-    const drag=Math.pow(.82+slide*.17,dt*60);d.vx*=drag;d.vz*=drag;
+    const drag=Math.pow(.82+slide*.17,dt*60);
+    d.vx*=drag;d.vz*=drag;
+
+    // Magnet blocks attract nearby physics blocks.
+    if(type==="magnet"){
+      for(const other of physics){
+        if(other===b)continue;
+        const delta=b.mesh.position.clone().sub(other.mesh.position);
+        const dist=Math.max(.5,delta.length());
+        if(dist<6){
+          delta.normalize();
+          const force=(6-dist)*1.5/Math.max(.2,Number(other.data.weight)||1);
+          other.data.vx+=delta.x*force*dt;
+          other.data.vy+=delta.y*force*dt;
+          other.data.vz+=delta.z*force*dt;
+        }
+      }
+    }
+
     const base=Number(d.size)||1;
-    const halfX=base*(Number(d.scaleX)||1)/2,halfY=base*(Number(d.scaleY)||1)/2,halfZ=base*(Number(d.scaleZ)||1)/2;
-    let next=b.mesh.position.clone();next.x+=d.vx*dt;next.y+=d.vy*dt;next.z+=d.vz*dt;
-    if(next.y-halfY<0){next.y=halfY;if(d.vy<0)d.vy=-d.vy*bounce;if(Math.abs(d.vy)<.12)d.vy=0}
-    // Land on static or other physics blocks using their world AABBs.
-    const nextBox=new THREE.Box3(new THREE.Vector3(next.x-halfX,next.y-halfY,next.z-halfZ),new THREE.Vector3(next.x+halfX,next.y+halfY,next.z+halfZ));
+    const halfX=base*(Number(d.scaleX)||1)/2;
+    const halfY=base*(Number(d.scaleY)||1)/2;
+    const halfZ=base*(Number(d.scaleZ)||1)/2;
+
+    // Player pushes physics blocks.
+    if(d.pushable!==false&&localPlayer){
+      const delta=b.mesh.position.clone().sub(localPlayer.position);
+      const horizontal=new THREE.Vector2(delta.x,delta.z);
+      const minDist=playerRadius+Math.max(halfX,halfZ);
+      const verticalClose=Math.abs(delta.y)<halfY+playerRadius+.25;
+      if(verticalClose&&horizontal.length()<minDist+.15){
+        const moveDir=new THREE.Vector3();
+        const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+        const right=new THREE.Vector3(-forward.z,0,forward.x);
+        if(keys.w||mobileMoveY<-.08)moveDir.add(forward);
+        if(keys.s||mobileMoveY>.08)moveDir.sub(forward);
+        if(keys.d||mobileMoveX>.08)moveDir.add(right);
+        if(keys.a||mobileMoveX<-.08)moveDir.sub(right);
+        if(moveDir.lengthSq()){
+          moveDir.normalize();
+          const push=5/Math.max(.35,weight);
+          d.vx+=moveDir.x*push;
+          d.vz+=moveDir.z*push;
+        }
+      }
+    }
+
+    let next=b.mesh.position.clone();
+    next.x+=d.vx*dt;next.y+=d.vy*dt;next.z+=d.vz*dt;
+
+    if(next.y-halfY<0){
+      next.y=halfY;
+      if(d.vy<0)d.vy=-d.vy*bounce;
+      if(Math.abs(d.vy)<.12)d.vy=0;
+    }
+
+    let nextBox=new THREE.Box3(
+      new THREE.Vector3(next.x-halfX,next.y-halfY,next.z-halfZ),
+      new THREE.Vector3(next.x+halfX,next.y+halfY,next.z+halfZ)
+    );
+
     for(const other of blocks.values()){
       if(other===b)continue;
       const ob=blockBox(other.data);
       if(!nextBox.intersectsBox(ob))continue;
-      const oldBottom=b.mesh.position.y-halfY,otherTop=ob.max.y;
-      if(d.vy<=0&&oldBottom>=otherTop-.15){next.y=otherTop+halfY;d.vy=-d.vy*bounce;if(Math.abs(d.vy)<.12)d.vy=0;nextBox.min.y=next.y-halfY;nextBox.max.y=next.y+halfY}
-      else{
-        // Simple side response.
-        const dx=Math.min(nextBox.max.x-ob.min.x,ob.max.x-nextBox.min.x);
-        const dz=Math.min(nextBox.max.z-ob.min.z,ob.max.z-nextBox.min.z);
-        if(dx<dz){next.x=b.mesh.position.x;d.vx=-d.vx*bounce}else{next.z=b.mesh.position.z;d.vz=-d.vz*bounce}
+
+      const oldBottom=b.mesh.position.y-halfY;
+      const otherTop=ob.max.y;
+      if(d.vy<=0&&oldBottom>=otherTop-.18){
+        next.y=otherTop+halfY;
+        d.vy=-d.vy*bounce;
+        if(Math.abs(d.vy)<.12)d.vy=0;
+      }else{
+        const overlapX=Math.min(nextBox.max.x-ob.min.x,ob.max.x-nextBox.min.x);
+        const overlapY=Math.min(nextBox.max.y-ob.min.y,ob.max.y-nextBox.min.y);
+        const overlapZ=Math.min(nextBox.max.z-ob.min.z,ob.max.z-nextBox.min.z);
+        if(overlapX<=overlapY&&overlapX<=overlapZ){
+          next.x=b.mesh.position.x;
+          d.vx=-d.vx*bounce;
+          if(other.data.physics&&other.data.pushable!==false){
+            other.data.vx+=(Number(d.vx)||0)*.35/Math.max(.2,Number(other.data.weight)||1);
+          }
+        }else if(overlapZ<=overlapY){
+          next.z=b.mesh.position.z;
+          d.vz=-d.vz*bounce;
+          if(other.data.physics&&other.data.pushable!==false){
+            other.data.vz+=(Number(d.vz)||0)*.35/Math.max(.2,Number(other.data.weight)||1);
+          }
+        }else{
+          next.y=b.mesh.position.y;
+          d.vy=-d.vy*bounce;
+        }
       }
+      nextBox=new THREE.Box3(
+        new THREE.Vector3(next.x-halfX,next.y-halfY,next.z-halfZ),
+        new THREE.Vector3(next.x+halfX,next.y+halfY,next.z+halfZ)
+      );
     }
-    b.mesh.position.copy(next);d.x=next.x;d.y=next.y;d.z=next.z;
+
+    b.mesh.position.copy(next);
+    d.x=next.x;d.y=next.y;d.z=next.z;
   }
 }
 
@@ -354,7 +457,7 @@ function animate(now=performance.now()){
       b.data.vx=b.data.vy=b.data.vz=0;
     }
   }
-  updatePhysics(dt);updateCamera();broadcastMovement(now);renderer.render(scene,camera);
+  updatePhysics(dt);updateCamera();updateChatBubbles();broadcastMovement(now);renderer.render(scene,camera);
 }
 
 function selectBlock(id){
@@ -365,7 +468,13 @@ function selectBlock(id){
   $("moveSelectedName").textContent=b?.data.physics?name:"Select a physics block";
   $("scaleSelectedName").textContent=name;
   $("rotateSelectedName").textContent=name;
-  if(b?.data.physics){$("editBounce").value=b.data.bounce??.25;$("editWeight").value=b.data.weight??1;$("editSliding").value=b.data.sliding??.35}
+  if(b?.data.physics){
+    $("editBounce").value=b.data.bounce??.25;
+    $("editWeight").value=b.data.weight??1;
+    $("editSliding").value=b.data.sliding??.35;
+    if($("editPhysicsType"))$("editPhysicsType").value=b.data.physicsType||"normal";
+    if($("editPushable"))$("editPushable").checked=b.data.pushable!==false;
+  }
   const sx=b?.data.scaleX??1,sy=b?.data.scaleY??1,sz=b?.data.scaleZ??1;
   $("scaleX").value=sx;$("scaleY").value=sy;$("scaleZ").value=sz;
   $("scaleXValue").value=Number(sx).toFixed(2);$("scaleYValue").value=Number(sy).toFixed(2);$("scaleZValue").value=Number(sz).toFixed(2);
@@ -384,7 +493,13 @@ document.querySelectorAll(".modeTabs button").forEach(b=>b.onclick=()=>setMode(b
 $("blockType").onchange=()=>$("physicsCreate").classList.toggle("hidden",$("blockType").value!=="physics");
 $("applyPhysics").onclick=()=>{
   const b=blocks.get(selectedId);if(!b?.data.physics)return;
-  b.data.bounce=Number($("editBounce").value);b.data.weight=Number($("editWeight").value);b.data.sliding=Number($("editSliding").value);broadcastBlockUpdate(selectedId);
+  b.data.bounce=Number($("editBounce").value);
+  b.data.weight=Number($("editWeight").value);
+  b.data.sliding=Number($("editSliding").value);
+  b.data.physicsType=$("editPhysicsType")?.value||"normal";
+  b.data.pushable=$("editPushable")?.checked!==false;
+  applyPhysicsPreset(b.data);
+  broadcastBlockUpdate(selectedId);
 };
 function applyAxisScale(axis,value){
   const b=blocks.get(selectedId);if(!b)return;
@@ -406,12 +521,48 @@ let chatVisible=true;
 $("toggleChat").onclick=()=>{chatVisible=!chatVisible;$("chatBody").classList.toggle("hidden",!chatVisible);$("toggleChat").textContent=chatVisible?"Hide chat":"Show chat"};
 $("collapseMenu").onclick=()=>{$("sideMenu").classList.toggle("collapsed");$("collapseMenu").textContent=$("sideMenu").classList.contains("collapsed")?"+":"−"};
 
+
+function showChatBubble(id,name,text){
+  const existing=chatBubbleState.get(id);
+  if(existing?.el)existing.el.remove();
+  const el=document.createElement("div");
+  el.className="chatBubble";
+  el.textContent=text;
+  $("chatBubbles")?.appendChild(el);
+  const state={el,name,text,expires:performance.now()+5000};
+  chatBubbleState.set(id,state);
+}
+function updateChatBubbles(){
+  if(!camera||!renderer)return;
+  const now=performance.now();
+  for(const [id,state] of chatBubbleState){
+    if(now>state.expires){
+      state.el.remove();
+      chatBubbleState.delete(id);
+      continue;
+    }
+    const obj=id===playerId?localPlayer:remotePlayers.get(id);
+    if(!obj){state.el.style.display="none";continue}
+    const p=obj.position.clone();
+    p.y+=1.15;
+    p.project(camera);
+    const visible=p.z<1&&p.z>-1;
+    state.el.style.display=visible?"block":"none";
+    if(visible){
+      state.el.style.left=((p.x*.5+.5)*innerWidth)+"px";
+      state.el.style.top=((-p.y*.5+.5)*innerHeight)+"px";
+    }
+  }
+}
 function sendMessage(){
   const body=$("chatInput").value.trim();if(!body||!connected)return;$("chatInput").value="";
-  channel?.send({type:"broadcast",event:"chat",payload:{player_id:playerId,player_name:playerName,body}});
+  const payload={player_id:playerId,player_name:playerName,body};
+  channel?.send({type:"broadcast",event:"chat",payload});
 }
 function appendMessage(m){
-  if(!m)return;const div=document.createElement("div");div.className="message";
+  if(!m)return;
+  if(m.player_id)showChatBubble(m.player_id,m.player_name||"Derp",m.body||"");
+  const div=document.createElement("div");div.className="message";
   const who=document.createElement("span");who.className="who";who.textContent=(m.player_name||"Derp")+": ";
   div.append(who,document.createTextNode(m.body||""));$("messages").appendChild(div);$("messages").scrollTop=$("messages").scrollHeight;
 }
@@ -468,7 +619,7 @@ function placeFromCurrentRay(){
   p.x=snap(p.x);p.z=snap(p.z);p.y=Math.max(size/2,snap(p.y));
   if(intersectsAnyPlayer(p,size)){flashStatus("Can't place on a player.");return}
   const physics=$("blockType").value==="physics";
-  const data={id:crypto.randomUUID(),owner_id:playerId,owner_name:playerName,x:p.x,y:p.y,z:p.z,size,color:$("blockColor").value,collide_self:$("collideSelf").checked,collide_others:$("collideOthers").checked,physics,shape:physics?$("physicsShape").value:"cube",bounce:Number($("physicsBounce").value)||0,weight:Math.max(.1,Number($("physicsWeight").value)||1),sliding:Number($("physicsSliding").value)||0,rotX:0,rotY:0,rotZ:0,scaleX:1,scaleY:1,scaleZ:1,vx:0,vy:0,vz:0};
+  const data={id:crypto.randomUUID(),owner_id:playerId,owner_name:playerName,x:p.x,y:p.y,z:p.z,size,color:$("blockColor").value,collide_self:$("collideSelf").checked,collide_others:$("collideOthers").checked,physics,shape:physics?$("physicsShape").value:"cube",bounce:Number($("physicsBounce").value)||0,weight:Math.max(.1,Number($("physicsWeight").value)||1),sliding:Number($("physicsSliding").value)||0,physicsType:$("physicsType")?.value||"normal",pushable:$("physicsPushable")?.checked!==false,rotX:0,rotY:0,rotZ:0,scaleX:1,scaleY:1,scaleZ:1,vx:0,vy:0,vz:0};
   addBlock(data);channel?.send({type:"broadcast",event:"block_add",payload:data});
 }
 function mobileDeleteAtCenter(){
@@ -507,37 +658,51 @@ function setupMobile(){
 
   const canvas=$("game");
   const touches=new Map();
+  let primaryTouch=null;
+
   canvas.addEventListener("pointerdown",e=>{
     if(e.pointerType!=="touch")return;
+    if(e.target!==canvas)return;
     touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    canvas.setPointerCapture(e.pointerId);
-    if(touches.size===1)mobileCameraTouch=e.pointerId;
+    try{canvas.setPointerCapture(e.pointerId)}catch{}
+    if(primaryTouch===null)primaryTouch=e.pointerId;
     if(touches.size===2){
-      const a=[...touches.values()];mobilePinchDistance=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      const a=[...touches.values()];
+      mobilePinchDistance=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
     }
     e.preventDefault();
   },{passive:false});
+
   canvas.addEventListener("pointermove",e=>{
     if(e.pointerType!=="touch"||!touches.has(e.pointerId))return;
-    const old=touches.get(e.pointerId);touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(touches.size===1&&e.pointerId===mobileCameraTouch&&!mobileGrabbed){
-      const dx=e.clientX-old.x,dy=e.clientY-old.y;
-      yaw-=dx*.008;
-      pitch-=dy*.007;
+    const old=touches.get(e.pointerId);
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+    if(touches.size===1&&e.pointerId===primaryTouch&&!mobileGrabbed){
+      const dx=e.clientX-old.x;
+      const dy=e.clientY-old.y;
+      // Dragging right turns the view right; dragging up looks upward.
+      yaw-=dx*.0065;
+      pitch+=dy*.0055;
       pitch=THREE.MathUtils.clamp(pitch,-.15,1.35);
     }else if(touches.size===2){
-      const a=[...touches.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
-      if(mobilePinchDistance>0)camDistance=THREE.MathUtils.clamp(camDistance+(mobilePinchDistance-dist)*.02,3,18);
+      const a=[...touches.values()];
+      const dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      if(mobilePinchDistance>0){
+        camDistance=THREE.MathUtils.clamp(camDistance+(mobilePinchDistance-dist)*.018,3,18);
+      }
       mobilePinchDistance=dist;
     }
     e.preventDefault();
   },{passive:false});
+
   const endTouch=e=>{
     touches.delete(e.pointerId);
-    mobilePinchDistance=0;
-    mobileCameraTouch=touches.size?[...touches.keys()][0]:null;
+    if(e.pointerId===primaryTouch)primaryTouch=touches.size?[...touches.keys()][0]:null;
+    if(touches.size<2)mobilePinchDistance=0;
   };
-  canvas.addEventListener("pointerup",endTouch);canvas.addEventListener("pointercancel",endTouch);
+  canvas.addEventListener("pointerup",endTouch);
+  canvas.addEventListener("pointercancel",endTouch);
 }
 
 setMode("blocks");setupMobile();setTimeout(bootCheck,0);
